@@ -15,7 +15,7 @@ async function startGame(interaction, betAmount) {
     const balance = await getUserBalance(userId);
     
     if (balance < betAmount) {
-        await interaction.reply({ content: 'Insufficient balance!', ephemeral: true });
+        await interaction.reply({ content: 'Insufficient balance!', flags: 64 });
         return;
     }
     

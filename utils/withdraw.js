@@ -51,14 +51,14 @@ async function handleModal(interaction) {
         const userBalance = await getUserBalance(interaction.user.id);
         
         if (parsedAmount <= 0) {
-            await interaction.reply({ content: 'Invalid amount specified.', ephemeral: true });
+            await interaction.reply({ content: 'Invalid amount specified.', flags: 64 });
             return;
         }
         
         if (parsedAmount > userBalance) {
             await interaction.reply({ 
                 content: `Insufficient balance. You have ${formatCurrency(userBalance)} available.`, 
-                ephemeral: true 
+                flags: 64 
             });
             return;
         }
@@ -67,7 +67,7 @@ async function handleModal(interaction) {
         const withdrawal = await logWithdrawal(interaction.user.id, parsedAmount);
         
         if (!withdrawal) {
-            await interaction.reply({ content: 'Failed to process withdrawal request.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to process withdrawal request.', flags: 64 });
             return;
         }
         
@@ -102,19 +102,19 @@ async function handleModal(interaction) {
         
         await interaction.reply({ 
             content: `✅ Withdrawal request for **${formatCurrency(parsedAmount)}** has been sent to the server owner for approval.`, 
-            ephemeral: true 
+            flags: 64 
         });
         
     } catch (error) {
         console.error('Withdrawal modal error:', error);
-        await interaction.reply({ content: 'Failed to process withdrawal request.', ephemeral: true });
+        await interaction.reply({ content: 'Failed to process withdrawal request.', flags: 64 });
     }
 }
 
 // Handle owner response to withdrawal
 async function handleOwnerResponse(interaction, params) {
     if (interaction.user.id !== process.env.SERVER_OWNER_ID) {
-        await interaction.reply({ content: 'You are not authorized to use this button.', ephemeral: true });
+        await interaction.reply({ content: 'You are not authorized to use this button.', flags: 64 });
         return;
     }
     
@@ -171,7 +171,7 @@ async function handleOwnerResponse(interaction, params) {
         
     } catch (error) {
         console.error('Owner response error:', error);
-        await interaction.reply({ content: 'Failed to process response.', ephemeral: true });
+        await interaction.reply({ content: 'Failed to process response.', flags: 64 });
     }
 }
 

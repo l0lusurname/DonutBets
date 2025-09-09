@@ -47,7 +47,7 @@ async function handleButton(interaction, params) {
     } catch (error) {
         console.error('Crash button error:', error);
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'An error occurred!', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred!', flags: 64 });
         } else if (interaction.deferred) {
             await interaction.editReply({ content: 'An error occurred!', components: [] });
         }
@@ -61,7 +61,7 @@ async function startGame(interaction) {
     if (balance < 100) {
         const reply = {
             content: 'You need at least 100 credits to play Crash!',
-            ephemeral: true
+            flags: 64
         };
         
         if (interaction.replied || interaction.deferred) {

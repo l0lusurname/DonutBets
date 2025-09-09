@@ -17,7 +17,7 @@ module.exports = {
             const amount = parseCurrency(amountInput);
             
             if (amount <= 0 || amount > 1000000000) { // Max 1B deposit
-                await interaction.reply({ content: 'Invalid amount. Must be between 1 and 1B.', ephemeral: true });
+                await interaction.reply({ content: 'Invalid amount. Must be between 1 and 1B.', flags: 64 });
                 return;
             }
             
@@ -41,7 +41,7 @@ module.exports = {
             
         } catch (error) {
             console.error('Deposit command error:', error);
-            await interaction.reply({ content: 'Failed to process deposit.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to process deposit.', flags: 64 });
         }
     }
 };

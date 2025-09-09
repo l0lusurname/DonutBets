@@ -46,7 +46,7 @@ module.exports = {
             
         } catch (error) {
             console.error('History command error:', error);
-            await interaction.reply({ content: 'Failed to retrieve game history.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to retrieve game history.', flags: 64 });
         }
     }
 };

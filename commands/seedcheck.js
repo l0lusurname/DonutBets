@@ -52,7 +52,7 @@ module.exports = {
             
         } catch (error) {
             console.error('Seed check error:', error);
-            await interaction.reply({ content: 'Failed to verify seed. Please check your input.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to verify seed. Please check your input.', flags: 64 });
         }
     }
 };

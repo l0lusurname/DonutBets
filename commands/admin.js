@@ -26,7 +26,7 @@ module.exports = {
     
     async execute(interaction) {
         if (!isOwner(interaction.user.id)) {
-            await interaction.reply({ content: 'This command is only available to the server owner.', ephemeral: true });
+            await interaction.reply({ content: 'This command is only available to the server owner.', flags: 64 });
             return;
         }
         
@@ -40,7 +40,7 @@ module.exports = {
                     const amount = parseCurrency(amountStr);
                     
                     if (amount < 0) {
-                        await interaction.reply({ content: 'Amount must be positive.', ephemeral: true });
+                        await interaction.reply({ content: 'Amount must be positive.', flags: 64 });
                         return;
                     }
                     
@@ -62,7 +62,7 @@ module.exports = {
                     const amount = parseCurrency(amountStr);
                     
                     if (amount <= 0) {
-                        await interaction.reply({ content: 'Amount must be positive.', ephemeral: true });
+                        await interaction.reply({ content: 'Amount must be positive.', flags: 64 });
                         return;
                     }
                     
@@ -81,7 +81,7 @@ module.exports = {
             }
         } catch (error) {
             console.error('Admin command error:', error);
-            await interaction.reply({ content: 'An error occurred while processing the command.', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred while processing the command.', flags: 64 });
         }
     }
 };

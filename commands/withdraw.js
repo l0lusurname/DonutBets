@@ -26,7 +26,7 @@ module.exports = {
             
         } catch (error) {
             console.error('Withdraw command error:', error);
-            await interaction.reply({ content: 'Failed to start withdrawal process.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to start withdrawal process.', flags: 64 });
         }
     }
 };
