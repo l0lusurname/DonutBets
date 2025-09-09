@@ -97,7 +97,20 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_mines_5').setLabel('5 💣').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_10').setLabel('10 💣').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Secondary)
-
+        );
+    
+    const mineRow2 = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_mines_20').setLabel('20 💣').setStyle(ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(ButtonStyle.Danger)
+        );
+    
+    if (interaction.replied || interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
+    } else {
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
+    }
+}
 
 async function handleCustomBet(interaction) {
     const userId = interaction.user.id;
@@ -152,21 +165,6 @@ async function handleCustomBet(interaction) {
             startGame(interaction);
         }
     });
-}
-
-        );
-    
-    const mineRow2 = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder().setCustomId('mines_mines_20').setLabel('20 💣').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(ButtonStyle.Danger)
-        );
-    
-    if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
-    } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
-    }
 }
 
 async function handleBetSelection(interaction, betAmount) {
