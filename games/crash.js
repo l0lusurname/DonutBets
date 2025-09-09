@@ -1,4 +1,3 @@
-
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
 const { generateSeed, generateCrashMultiplier } = require('../utils/provablyFair');
@@ -7,14 +6,14 @@ const activeGames = new Map();
 
 function parseFormattedNumber(input) {
     if (typeof input === 'number') return input;
-    
+
     const str = input.toString().toLowerCase().replace(/,/g, '');
     const num = parseFloat(str);
-    
+
     if (str.includes('k')) return Math.floor(num * 1000);
     if (str.includes('m')) return Math.floor(num * 1000000);
     if (str.includes('b')) return Math.floor(num * 1000000000);
-    
+
     return Math.floor(num);
 }
 
@@ -63,7 +62,7 @@ async function startGame(interaction) {
             content: 'You need at least 100 credits to play Crash!',
             flags: 64
         };
-        
+
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(reply);
         } else {
@@ -260,7 +259,7 @@ async function cashOut(interaction) {
 
 async function endCrashGame(interaction, gameState, crashed) {
     const userId = gameState.userId;
-    
+
     if (crashed) {
         const embed = new EmbedBuilder()
             .setTitle('💥 CRASHED!')
@@ -286,7 +285,7 @@ async function endCrashGame(interaction, gameState, crashed) {
         const winAmount = Math.floor(gameState.betAmount * gameState.currentMultiplier);
         const profit = winAmount - gameState.betAmount;
         const currentBalance = await getUserBalance(userId);
-        
+
         await updateUserBalance(userId, currentBalance + winAmount);
 
         const embed = new EmbedBuilder()

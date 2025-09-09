@@ -275,9 +275,9 @@ async function setupGame(interaction, betAmount, difficulty) {
 
     let blocksPerLevel;
     switch (difficulty) {
-        case 'easy': blocksPerLevel = 2; break;
+        case 'easy': blocksPerLevel = 4; break;
         case 'medium': blocksPerLevel = 3; break;
-        case 'hard': blocksPerLevel = 4; break;
+        case 'hard': blocksPerLevel = 2; break;
         default: blocksPerLevel = 3;
     }
 
@@ -310,9 +310,9 @@ async function updateTowersBoard(interaction, gameState) {
         let levelStr = `Level ${level + 1}: `;
         for (let block = 0; block < gameState.blocksPerLevel; block++) {
             if (block === gameState.correctPath[level]) {
-                levelStr += '✅ ';
+                levelStr += '💎 ';
             } else {
-                levelStr += '❌ ';
+                levelStr += '💣 ';
             }
         }
         completedLevels += levelStr + '\n';
@@ -338,8 +338,8 @@ async function updateTowersBoard(interaction, gameState) {
             currentLevelRow.addComponents(
                 new ButtonBuilder()
                     .setCustomId(`towers_tile_${gameState.currentLevel}_${block}`)
-                    .setLabel(`Block ${block + 1}`)
-                    .setStyle(ButtonStyle.Primary)
+                    .setLabel('💎')
+                    .setStyle(ButtonStyle.Secondary)
             );
         }
         rows.push(currentLevelRow);
