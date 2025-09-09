@@ -371,7 +371,7 @@ async function updateGameBoard(interaction, gameState) {
         );
 
     const rows = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
         const row = new ActionRowBuilder();
         for (let j = 0; j < 5; j++) {
             const tileNumber = i * 5 + j;
@@ -388,6 +388,23 @@ async function updateGameBoard(interaction, gameState) {
         rows.push(row);
     }
 
+    // Last row with tiles 20-24 and cashout button
+    const lastRow = new ActionRowBuilder();
+    for (let j = 0; j < 5; j++) {
+        const tileNumber = 20 + j;
+        const isRevealed = gameState.revealedTiles.has(tileNumber);
+        
+        lastRow.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`mines_tile_${tileNumber}`)
+                .setLabel(isRevealed ? '💎' : '?')
+                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setDisabled(isRevealed)
+        );
+    }
+    rows.push(lastRow);
+
+    // Add cashout button as a separate row (5th and final row)
     const cashoutRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
@@ -395,7 +412,6 @@ async function updateGameBoard(interaction, gameState) {
                 .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
                 .setStyle(ButtonStyle.Primary)
         );
-
     rows.push(cashoutRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
