@@ -135,7 +135,11 @@ async function handleCustomBet(interaction) {
             new ButtonBuilder().setCustomId('towers_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
         );
 
-    await interaction.update({ embeds: [embed], components: [backRow] });
+    if (interaction.replied || interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [backRow] });
+    } else {
+        await interaction.update({ embeds: [embed], components: [backRow] });
+    }
 
     const filter = (message) => {
         return message.author.id === userId && message.content.startsWith('!bet');
@@ -352,7 +356,7 @@ async function winGame(interaction, gameState) {
                 .setStyle(ButtonStyle.Primary)
         );
 
-    await interaction.update({ embeds: [embed], components: [newGameRow] });
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
 async function loseGame(interaction, gameState) {
@@ -385,7 +389,7 @@ async function loseGame(interaction, gameState) {
                 .setStyle(ButtonStyle.Primary)
         );
 
-    await interaction.update({ embeds: [embed], components: [newGameRow] });
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
 async function cashOut(interaction) {
@@ -435,7 +439,7 @@ async function cashOut(interaction) {
                 .setStyle(ButtonStyle.Primary)
         );
 
-    await interaction.update({ embeds: [embed], components: [newGameRow] });
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
 module.exports = { handleButton, startGame };
