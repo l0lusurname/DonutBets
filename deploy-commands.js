@@ -23,14 +23,17 @@ const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 (async () => {
     try {
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
+        console.log(`Using Application ID: ${process.env.CLIENT_ID}`);
+        console.log('Commands to register:', commands.map(cmd => cmd.name).join(', '));
 
         const data = await rest.put(
-            Routes.applicationCommands(process.env.CLIENT_ID || 'YOUR_CLIENT_ID'),
+            Routes.applicationCommands(process.env.CLIENT_ID),
             { body: commands },
         );
 
         console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+        console.log('Registered commands:', data.map(cmd => cmd.name).join(', '));
     } catch (error) {
-        console.error(error);
+        console.error('Deployment error:', error);
     }
 })();
