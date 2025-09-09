@@ -77,15 +77,15 @@ function generateTowerMines(seed, difficulty) {
     switch (difficulty) {
         case 'easy':
             slotsPerLevel = 4;
-            minesPerLevel = 1;
+            minesPerLevel = 1;  // 1 mine, 3 safe blocks
             break;
         case 'medium':
             slotsPerLevel = 3;
-            minesPerLevel = 1;
+            minesPerLevel = 1;  // 1 mine, 2 safe blocks  
             break;
         case 'hard':
-            slotsPerLevel = 3;
-            minesPerLevel = 2;
+            slotsPerLevel = 2;
+            minesPerLevel = 1;  // 1 mine, 1 safe block
             break;
         default:
             slotsPerLevel = 4;
@@ -96,10 +96,11 @@ function generateTowerMines(seed, difficulty) {
         const levelMines = [];
         const used = new Set();
         
+        // Generate mine positions for this level
         for (let m = 0; m < minesPerLevel; m++) {
             let position;
             do {
-                position = getRandomFromSeed(seed, 0, slotsPerLevel - 1, level * 10 + m);
+                position = getRandomFromSeed(seed, 0, slotsPerLevel - 1, level * 10 + m + Date.now() % 1000);
             } while (used.has(position));
             
             used.add(position);
