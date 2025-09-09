@@ -437,9 +437,9 @@ async function updateGameBoard(interaction, gameState) {
     }
     rows.push(row4);
 
-    // Row 5: Tiles 20-23 + Cash Out button (4 tiles + cashout to stay within Discord's 5 component limit)
+    // Row 5: Tiles 20-24 (5 tiles)
     const row5 = new ActionRowBuilder();
-    for (let j = 20; j < 24; j++) {
+    for (let j = 20; j < 25; j++) {
         const isRevealed = gameState.revealedTiles.has(j);
         row5.addComponents(
             new ButtonBuilder()
@@ -449,20 +449,17 @@ async function updateGameBoard(interaction, gameState) {
                 .setDisabled(isRevealed)
         );
     }
-    
-    // Add cashout button to this row instead of separate row
-    row5.addComponents(
-        new ButtonBuilder()
-            .setCustomId('mines_cashout')
-            .setLabel(`💰 ${formatCurrency(potentialWin)}`)
-            .setStyle(ButtonStyle.Success)
-    );
     rows.push(row5);
 
-    // Handle tile 24 separately since we can't fit all 25 tiles + cashout
-    if (!gameState.revealedTiles.has(24)) {
-        embed.setFooter({ text: 'Tile 24 available - use /cashout or reveal more tiles' });
-    }
+    // Add cashout button in separate row
+    const cashoutRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_cashout')
+                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                .setStyle(ButtonStyle.Success)
+        );
+    rows.push(cashoutRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }

@@ -112,9 +112,9 @@ async function startGame(interaction) {
 
     const difficultyRow = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy: 4 blocks, 1 mine').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium: 3 blocks, 1 mine').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 2 blocks, 1 mine').setStyle(ButtonStyle.Danger)
         );
 
     if (interaction.replied || interaction.deferred) {
@@ -276,7 +276,7 @@ async function setupGame(interaction, betAmount, difficulty) {
     let blocksPerLevel;
     switch (difficulty) {
         case 'easy': blocksPerLevel = 4; break;
-        case 'medium': blocksPerLevel = 3; break;
+        case 'medium': blocksPerLevel = 3; break; 
         case 'hard': blocksPerLevel = 2; break;
         default: blocksPerLevel = 3;
     }
