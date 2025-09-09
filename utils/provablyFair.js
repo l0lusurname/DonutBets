@@ -44,7 +44,7 @@ function generateMinesResults(seed, mineCount) {
     for (let i = 0; i < mineCount; i++) {
         let position;
         do {
-            position = getRandomFromSeed(seed, 0, 24, i + 100); // offset to avoid collision
+            position = getRandomFromSeed(seed, 0, 15, i + 100); // 16 tiles (0-15) for 4x4 grid
         } while (used.has(position));
         
         used.add(position);

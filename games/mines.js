@@ -93,7 +93,7 @@ async function startGame(interaction) {
         .setColor('#FF4500')
         .addFields(
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
-            { name: '💣 Mines', value: 'Choose 1-24 mines', inline: true }
+            { name: '💣 Mines', value: 'Choose 1-15 mines', inline: true }
         );
 
     const betRow = new ActionRowBuilder()
@@ -115,14 +115,13 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_mines_1').setLabel('1 💣').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_3').setLabel('3 💣').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_5').setLabel('5 💣').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('mines_mines_10').setLabel('10 💣').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Secondary)
+            new ButtonBuilder().setCustomId('mines_mines_8').setLabel('8 💣').setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_mines_12').setLabel('12 💣').setStyle(ButtonStyle.Secondary)
         );
 
     const mineRow2 = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('mines_mines_20').setLabel('20 💣').setStyle(ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Danger)
         );
 
     if (interaction.replied || interaction.deferred) {
@@ -253,14 +252,13 @@ async function updateSelectionDisplay(interaction, gameState) {
             new ButtonBuilder().setCustomId('mines_mines_1').setLabel('1 💣').setStyle(gameState.mineCount === 1 ? ButtonStyle.Success : ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_3').setLabel('3 💣').setStyle(gameState.mineCount === 3 ? ButtonStyle.Success : ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_5').setLabel('5 💣').setStyle(gameState.mineCount === 5 ? ButtonStyle.Success : ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('mines_mines_10').setLabel('10 💣').setStyle(gameState.mineCount === 10 ? ButtonStyle.Success : ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(gameState.mineCount === 15 ? ButtonStyle.Success : ButtonStyle.Secondary)
+            new ButtonBuilder().setCustomId('mines_mines_8').setLabel('8 💣').setStyle(gameState.mineCount === 8 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_mines_12').setLabel('12 💣').setStyle(gameState.mineCount === 12 ? ButtonStyle.Success : ButtonStyle.Secondary)
         );
 
     const mineRow2 = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('mines_mines_20').setLabel('20 💣').setStyle(gameState.mineCount === 20 ? ButtonStyle.Success : ButtonStyle.Danger),
-            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(gameState.mineCount === 24 ? ButtonStyle.Success : ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(gameState.mineCount === 15 ? ButtonStyle.Success : ButtonStyle.Danger)
         );
 
     // Add start game button if both selections are made
@@ -308,14 +306,14 @@ async function setupGame(interaction, betAmount, mineCount) {
         .addFields(
             { name: '💰 Bet Amount', value: formatCurrency(betAmount), inline: true },
             { name: '💣 Mines', value: mineCount.toString(), inline: true },
-            { name: '💎 Safe Tiles', value: (25 - mineCount).toString(), inline: true }
+            { name: '💎 Safe Tiles', value: (16 - mineCount).toString(), inline: true }
         );
 
     const rows = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 4; i++) {
         const row = new ActionRowBuilder();
-        for (let j = 0; j < 5; j++) {
-            const tileNumber = i * 5 + j;
+        for (let j = 0; j < 4; j++) {
+            const tileNumber = i * 4 + j;
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId(`mines_tile_${tileNumber}`)
@@ -325,6 +323,16 @@ async function setupGame(interaction, betAmount, mineCount) {
         }
         rows.push(row);
     }
+    
+    // Add cashout button row
+    const cashoutRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_cashout')
+                .setLabel('💰 Cash Out')
+                .setStyle(ButtonStyle.Success)
+        );
+    rows.push(cashoutRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
@@ -354,7 +362,7 @@ async function revealTile(interaction, tileNumber) {
 
 async function updateGameBoard(interaction, gameState) {
     const revealedSafeTiles = gameState.revealedTiles.size;
-    const totalSafeTiles = 25 - gameState.mineCount;
+    const totalSafeTiles = 16 - gameState.mineCount;
     
     // Better multiplier calculation based on mine count and tiles revealed
     let baseMultiplier;
@@ -381,94 +389,32 @@ async function updateGameBoard(interaction, gameState) {
 
     const rows = [];
     
-    // Row 1: Tiles 0-4
-    const row1 = new ActionRowBuilder();
-    for (let j = 0; j < 5; j++) {
-        const isRevealed = gameState.revealedTiles.has(j);
-        row1.addComponents(
-            new ButtonBuilder()
-                .setCustomId(`mines_tile_${j}`)
-                .setLabel(isRevealed ? '💎' : '?')
-                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(isRevealed)
-        );
-    }
-    rows.push(row1);
-
-    // Row 2: Tiles 5-9
-    const row2 = new ActionRowBuilder();
-    for (let j = 5; j < 10; j++) {
-        const isRevealed = gameState.revealedTiles.has(j);
-        row2.addComponents(
-            new ButtonBuilder()
-                .setCustomId(`mines_tile_${j}`)
-                .setLabel(isRevealed ? '💎' : '?')
-                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(isRevealed)
-        );
-    }
-    rows.push(row2);
-
-    // Row 3: Tiles 10-14
-    const row3 = new ActionRowBuilder();
-    for (let j = 10; j < 15; j++) {
-        const isRevealed = gameState.revealedTiles.has(j);
-        row3.addComponents(
-            new ButtonBuilder()
-                .setCustomId(`mines_tile_${j}`)
-                .setLabel(isRevealed ? '💎' : '?')
-                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(isRevealed)
-        );
-    }
-    rows.push(row3);
-
-    // Row 4: Tiles 15-19
-    const row4 = new ActionRowBuilder();
-    for (let j = 15; j < 20; j++) {
-        const isRevealed = gameState.revealedTiles.has(j);
-        row4.addComponents(
-            new ButtonBuilder()
-                .setCustomId(`mines_tile_${j}`)
-                .setLabel(isRevealed ? '💎' : '?')
-                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(isRevealed)
-        );
-    }
-    rows.push(row4);
-
-    // Row 5: Tiles 20-24 (5 tiles)
-    const row5 = new ActionRowBuilder();
-    for (let j = 20; j < 25; j++) {
-        const isRevealed = gameState.revealedTiles.has(j);
-        row5.addComponents(
-            new ButtonBuilder()
-                .setCustomId(`mines_tile_${j}`)
-                .setLabel(isRevealed ? '💎' : '?')
-                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(isRevealed)
-        );
-    }
-    rows.push(row5);
-
-    // Add cashout button to the last row instead of separate row to avoid Discord's 5-row limit
-    if (rows.length > 0) {
-        const lastRow = rows[rows.length - 1];
-        if (lastRow.components.length < 5) {
-            lastRow.addComponents(
+    // Create 4x4 grid (16 tiles)
+    for (let i = 0; i < 4; i++) {
+        const row = new ActionRowBuilder();
+        for (let j = 0; j < 4; j++) {
+            const tileNumber = i * 4 + j;
+            const isRevealed = gameState.revealedTiles.has(tileNumber);
+            row.addComponents(
                 new ButtonBuilder()
-                    .setCustomId('mines_cashout')
-                    .setLabel(`💰 ${formatCurrency(potentialWin)}`)
-                    .setStyle(ButtonStyle.Success)
+                    .setCustomId(`mines_tile_${tileNumber}`)
+                    .setLabel(isRevealed ? '💎' : '?')
+                    .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                    .setDisabled(isRevealed)
             );
-        } else {
-            // If last row is full, replace one tile button with cashout
-            lastRow.components[4] = new ButtonBuilder()
-                .setCustomId('mines_cashout')
-                .setLabel(`💰 ${formatCurrency(potentialWin)}`)
-                .setStyle(ButtonStyle.Success);
         }
+        rows.push(row);
     }
+
+    // Add cashout button in separate row
+    const cashoutRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_cashout')
+                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                .setStyle(ButtonStyle.Success)
+        );
+    rows.push(cashoutRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
