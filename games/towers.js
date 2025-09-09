@@ -112,9 +112,9 @@ async function startGame(interaction) {
 
     const difficultyRow = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy: 4 blocks, 1 mine').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium: 3 blocks, 1 mine').setStyle(ButtonStyle.Primary),
-            new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 2 blocks, 1 mine').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy: 4 blocks, 1 safe').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium: 3 blocks, 1 safe').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 2 blocks, 1 safe').setStyle(ButtonStyle.Danger)
         );
 
     if (interaction.replied || interaction.deferred) {
@@ -286,7 +286,7 @@ async function setupGame(interaction, betAmount, difficulty) {
     // Add extra randomness to make each game unique
     uniqueSeed.nonce = uniqueSeed.nonce + Math.random() * 1000000 + Date.now();
     uniqueSeed.hash = crypto.createHash('sha256').update(uniqueSeed.serverSeed + uniqueSeed.clientSeed + uniqueSeed.nonce.toString()).digest('hex');
-    
+
     const correctPath = generateTowersResults(uniqueSeed, 8, blocksPerLevel);
 
     const gameState = {
