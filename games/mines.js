@@ -169,10 +169,13 @@ async function handleCustomBet(interaction) {
             return;
         }
 
-        await message.delete().catch(() => {});
-        await message.reply(`Custom bet set: ${formatCurrency(betAmount)}!`).then(msg => {
-            setTimeout(() => msg.delete().catch(() => {}), 3000);
-        });
+        try {
+            const replyMsg = await message.reply(`Custom bet set: ${formatCurrency(betAmount)}!`);
+            setTimeout(() => replyMsg.delete().catch(() => {}), 3000);
+            await message.delete().catch(() => {});
+        } catch (error) {
+            console.log('Message interaction error:', error.message);
+        }
 
         await handleBetSelection(interaction, betAmount);
     });
