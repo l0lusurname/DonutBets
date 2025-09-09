@@ -82,12 +82,12 @@ async function startGame(interaction) {
 
 async function startCrashGame(interaction, betAmount) {
     const userId = interaction.user.id;
-    
+
     // Defer the interaction if not already handled
     if (!interaction.replied && !interaction.deferred) {
         await interaction.deferUpdate();
     }
-    
+
     const balance = await getUserBalance(userId);
 
     if (balance < betAmount) {
@@ -109,12 +109,21 @@ async function startCrashGame(interaction, betAmount) {
         crashed: false,
         cashedOut: false,
         startTime: Date.now()
+    };
 
+    activeGames.set(userId, gameState);
+
+    // Deduct bet from balance
+    await updateUserBalance(userId, balance - betAmount);
+
+    // Start the game loop
+    await updateCrashGame(interaction, gameState);
+}
 
 async function handleCustomBet(interaction) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
-    
+
     const embed = new EmbedBuilder()
         .setTitle('💰 Custom Bet Amount')
         .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExample: `!bet 1500`')
@@ -130,51 +139,40 @@ async function handleCustomBet(interaction) {
         );
 
     await interaction.update({ embeds: [embed], components: [backRow] });
-    
+
     // Set up message collector for custom bet
     const filter = (message) => {
         return message.author.id === userId && message.content.startsWith('!bet');
     };
-    
+
     const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
-    
+
     collector.on('collect', async (message) => {
         const betAmount = parseInt(message.content.split(' ')[1]);
-        
+
         if (isNaN(betAmount) || betAmount < 100) {
             await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
             return;
         }
-        
+
         if (betAmount > balance) {
             await message.reply('Insufficient balance!');
             return;
         }
-        
+
         await message.delete().catch(() => {});
         await message.reply(`Starting Crash game with ${formatCurrency(betAmount)}!`).then(msg => {
             setTimeout(() => msg.delete().catch(() => {}), 3000);
         });
-        
+
         await startCrashGame(interaction, betAmount);
     });
-    
+
     collector.on('end', (collected, reason) => {
         if (reason === 'time' && collected.size === 0) {
             startGame(interaction);
         }
     });
-}
-
-    };
-
-    activeGames.set(userId, gameState);
-
-    // Deduct bet from balance
-    await updateUserBalance(userId, balance - betAmount);
-
-    // Start the game loop
-    await updateCrashGame(interaction, gameState);
 }
 
 async function updateCrashGame(interaction, gameState) {
