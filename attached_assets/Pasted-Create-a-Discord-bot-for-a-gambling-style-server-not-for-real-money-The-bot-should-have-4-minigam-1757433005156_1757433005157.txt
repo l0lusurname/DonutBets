@@ -1,0 +1,172 @@
+Create a Discord bot for a gambling-style server (not for real money). The bot should have 4 minigames: Mines, Towers, Slots, and Crash, and an admin panel for full control. Only the server owner can access admin commands. Use Supabase for database storage (balances, logs, seeds). Provide instructions on how to set up the bot, database, and table structures.
+
+Requirements
+General
+
+Use Discord.js v14 (or latest stable) with buttons, embeds, and interactions.
+
+All games must be provably fair using hashed seeds + client seeds. Include a /seedcheck command for verification.
+
+Each player has a virtual balance (no real money).
+
+Display balances and winnings in formatted currency:
+
+K = thousand
+
+M = million
+
+B = billion
+
+Store balances, logs, and seeds in Supabase.
+
+Commands:
+
+/balance → shows current balance in formatted currency
+
+/deposit <amount> → adds fake credits (if enabled)
+
+/withdraw → opens a form with fields:
+
+Amount to withdraw (K/M/B format)
+
+In-game username
+
+On submit, bot sends a DM to server owner with two buttons: Pay and Decline
+
+If owner clicks Pay, DM the user: “You have been paid X credits.”
+
+If owner clicks Decline, DM the user: “Your withdrawal request was declined.”
+
+/history → shows last 10 games played by the user
+
+Games
+Mines
+
+5x5 grid of buttons.
+
+User chooses number of mines (1–24).
+
+Mines placed randomly using a seed.
+
+Clicking safe tiles increases multiplier; clicking a mine ends game and reveals all mines.
+
+Multipliers scale depending on mine count.
+
+Prevent exploits: no guaranteed safe first click, optional auto-cashout.
+
+Towers
+
+Three difficulties: Easy, Medium, Hard.
+
+Tower = ~8 rows; each row has slots:
+
+Easy: 4 slots (1 mine)
+
+Medium: 3 slots (1 mine)
+
+Hard: 3 slots (2 mines)
+
+Player must pick correct slot to progress; wrong choice ends game and reveals all mines.
+
+Multipliers increase per successful level; randomize slightly to prevent predictable patterns.
+
+Slots
+
+Standard 3x3 slot machine.
+
+Symbols: 🍒 🍋 🍊 🍉 ⭐ 🔔 7️⃣
+
+Payouts: 3 in a row (horizontal, vertical, diagonal), mixed special combos, rare jackpots.
+
+Shuffle reels using seeds to prevent fixed patterns.
+
+Crash
+
+Generate crash multiplier using seed at game start.
+
+Counter rises visually (starts slow, accelerates as multiplier increases).
+
+Player must /cashout before it crashes.
+
+Minimum and maximum crash caps enforced (e.g., 1.01x–1000x).
+
+Randomize curve to prevent predictable stopping points.
+
+Admin Panel (Owner Only)
+
+Commands accessible only to the server owner:
+
+/logs → view all player bets, wins/losses, seeds used
+
+/seedcheck <game> <seed> → shows exactly how the game was generated (mines, towers, crash multiplier, slot reels)
+
+/setbalance <user> <amount> → set a user’s balance
+
+/give <user> <amount> → add credits
+
+/resetbalances → reset all player balances to default amount
+
+/clearlogs → clear all stored logs
+
+Logs must include: user, game, bet, outcome, multiplier, profit/loss, seed
+
+Allow export of logs to a file (JSON/CSV)
+
+Withdraw System
+
+Users submit a /withdraw form: amount (formatted K/M/B) and in-game name.
+
+Bot sends a DM to server owner with two buttons: Pay and Decline.
+
+Owner clicks a button:
+
+Pay → DM the user “You have been paid X credits.” and update balance accordingly
+
+Decline → DM the user “Your withdrawal request was declined.”
+
+All withdrawal requests are logged in Supabase for auditing.
+
+Supabase Table Structures
+
+users
+| Column | Type | Description |
+|-------------|---------|---------------------------------|
+| id | UUID | Primary key (Discord user ID) |
+| username | TEXT | Discord username or in-game name|
+| balance | BIGINT | User balance in smallest unit |
+| created_at | TIMESTAMP | Account creation time |
+
+games
+| Column | Type | Description |
+|-------------|-----------|---------------------------------|
+| id | UUID | Primary key |
+| user_id | UUID | Reference to users table |
+| game_type | TEXT | Mines, Towers, Slots, Crash |
+| bet_amount | BIGINT | Amount bet |
+| outcome | TEXT | Win/Loss |
+| multiplier | FLOAT | Multiplier applied |
+| profit_loss | BIGINT | Profit or loss |
+| seed | TEXT | Seed used for provably fair |
+| created_at | TIMESTAMP | Time of game played |
+
+withdrawals
+| Column | Type | Description |
+|-------------|-----------|---------------------------------|
+| id | UUID | Primary key |
+| user_id | UUID | Reference to users table |
+| amount | BIGINT | Amount requested |
+| status | TEXT | Pending, Paid, Declined |
+| created_at | TIMESTAMP | Request time |
+| updated_at | TIMESTAMP | Status update time |
+
+Setup Instructions
+
+Create a Supabase project and set up tables as described above.
+
+Add bot to your Discord server with application.commands, message content, and DM permissions.
+
+Configure environment variables for Supabase URL and API key.
+
+Ensure the server owner’s Discord ID is stored in config for owner-only admin access.
+
+Run the bot; it should connect to Supabase and allow playing, balance tracking, withdrawals, and admin controls.
