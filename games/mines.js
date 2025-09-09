@@ -371,58 +371,89 @@ async function updateGameBoard(interaction, gameState) {
         );
 
     const rows = [];
-    for (let i = 0; i < 4; i++) {
-        const row = new ActionRowBuilder();
-        for (let j = 0; j < 5; j++) {
-            const tileNumber = i * 5 + j;
-            const isRevealed = gameState.revealedTiles.has(tileNumber);
-            
-            row.addComponents(
-                new ButtonBuilder()
-                    .setCustomId(`mines_tile_${tileNumber}`)
-                    .setLabel(isRevealed ? '💎' : '?')
-                    .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                    .setDisabled(isRevealed)
-            );
-        }
-        rows.push(row);
-    }
-
-    // Last row with tiles 20-23 only (4 tiles instead of 5)
-    const lastRow = new ActionRowBuilder();
-    for (let j = 0; j < 4; j++) {
-        const tileNumber = 20 + j;
-        const isRevealed = gameState.revealedTiles.has(tileNumber);
-        
-        lastRow.addComponents(
+    
+    // Row 1: Tiles 0-4
+    const row1 = new ActionRowBuilder();
+    for (let j = 0; j < 5; j++) {
+        const isRevealed = gameState.revealedTiles.has(j);
+        row1.addComponents(
             new ButtonBuilder()
-                .setCustomId(`mines_tile_${tileNumber}`)
+                .setCustomId(`mines_tile_${j}`)
+                .setLabel(isRevealed ? '💎' : '?')
+                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setDisabled(isRevealed)
+        );
+    }
+    rows.push(row1);
+
+    // Row 2: Tiles 5-9
+    const row2 = new ActionRowBuilder();
+    for (let j = 5; j < 10; j++) {
+        const isRevealed = gameState.revealedTiles.has(j);
+        row2.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`mines_tile_${j}`)
+                .setLabel(isRevealed ? '💎' : '?')
+                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setDisabled(isRevealed)
+        );
+    }
+    rows.push(row2);
+
+    // Row 3: Tiles 10-14
+    const row3 = new ActionRowBuilder();
+    for (let j = 10; j < 15; j++) {
+        const isRevealed = gameState.revealedTiles.has(j);
+        row3.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`mines_tile_${j}`)
+                .setLabel(isRevealed ? '💎' : '?')
+                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setDisabled(isRevealed)
+        );
+    }
+    rows.push(row3);
+
+    // Row 4: Tiles 15-19
+    const row4 = new ActionRowBuilder();
+    for (let j = 15; j < 20; j++) {
+        const isRevealed = gameState.revealedTiles.has(j);
+        row4.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`mines_tile_${j}`)
+                .setLabel(isRevealed ? '💎' : '?')
+                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setDisabled(isRevealed)
+        );
+    }
+    rows.push(row4);
+
+    // Row 5: Tiles 20-24 + Cash Out button (can't fit cashout with 5 tiles, so make it 4 tiles + cashout)
+    const row5 = new ActionRowBuilder();
+    for (let j = 20; j < 24; j++) {
+        const isRevealed = gameState.revealedTiles.has(j);
+        row5.addComponents(
+            new ButtonBuilder()
+                .setCustomId(`mines_tile_${j}`)
                 .setLabel(isRevealed ? '💎' : '?')
                 .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
                 .setDisabled(isRevealed)
         );
     }
     
-    // Add cashout button to the same row
-    lastRow.addComponents(
-        new ButtonBuilder()
-            .setCustomId('mines_cashout')
-            .setLabel(`💰 Cash Out`)
-            .setStyle(ButtonStyle.Primary)
-    );
-    rows.push(lastRow);
-
-    // Final row with just tile 24
-    const finalRow = new ActionRowBuilder();
+    // Add tile 24
     const isRevealed24 = gameState.revealedTiles.has(24);
-    finalRow.addComponents(
+    row5.addComponents(
         new ButtonBuilder()
             .setCustomId('mines_tile_24')
             .setLabel(isRevealed24 ? '💎' : '?')
             .setStyle(isRevealed24 ? ButtonStyle.Success : ButtonStyle.Secondary)
             .setDisabled(isRevealed24)
     );
-    rows.push(finalRow);
+    rows.push(row5);
+
+    // Add embed field with cashout instruction instead of button
+    embed.addFields({ name: '💰 Cash Out', value: `Type \`/mines cashout\` to cash out ${formatCurrency(potentialWin)}`, inline: false });
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
