@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder } = require('discord.js');
 const crashGame = require('../games/crash');
 
@@ -7,6 +8,6 @@ module.exports = {
         .setDescription('Play the Crash minigame'),
     
     async execute(interaction) {
-        await crashGame.handleButton(interaction, ['start']);
+        await crashGame.startGame(interaction);
     }
 };

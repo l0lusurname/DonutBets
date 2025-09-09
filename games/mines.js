@@ -1,24 +1,31 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { 
-    getUserBalance, 
-    updateUserBalance, 
-    logGame, 
-    formatCurrency, 
-    parseCurrency 
-} = require('../utils/database');
-const { 
-    generateSeed, 
-    generateMinesPositions, 
-    calculateMinesMultiplier 
-} = require('../utils/provablyFair');
 
-// Store active games
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
+const { generateSeed, generateMinesResults } = require('../utils/provablyFair');
+
 const activeGames = new Map();
+
+function parseFormattedNumber(input) {
+    if (typeof input === 'number') return input;
+    
+    const str = input.toString().toLowerCase().replace(/,/g, '');
+    const num = parseFloat(str);
+    
+    if (str.includes('k')) return Math.floor(num * 1000);
+    if (str.includes('m')) return Math.floor(num * 1000000);
+    if (str.includes('b')) return Math.floor(num * 1000000000);
+    
+    return Math.floor(num);
+}
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferUpdate();
+        }
+
         switch (action) {
             case 'start':
                 await startGame(interaction);
@@ -33,8 +40,8 @@ async function handleButton(interaction, params) {
             case 'mines':
                 await handleMineSelection(interaction, parseInt(data[0]));
                 break;
-            case 'play':
-                await playTile(interaction, parseInt(data[0]));
+            case 'tile':
+                await revealTile(interaction, parseInt(data[0]));
                 break;
             case 'cashout':
                 await cashOut(interaction);
@@ -47,6 +54,8 @@ async function handleButton(interaction, params) {
         console.error('Mines button error:', error);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: 'An error occurred!', ephemeral: true });
+        } else if (interaction.deferred) {
+            await interaction.editReply({ content: 'An error occurred!', components: [] });
         }
     }
 }
@@ -56,14 +65,19 @@ async function startGame(interaction) {
     const balance = await getUserBalance(userId);
 
     if (balance < 100) {
-        await interaction.reply({ 
-            content: 'You need at least 100 credits to play Mines!', 
-            ephemeral: true 
-        });
+        const reply = {
+            content: 'You need at least 100 credits to play Mines!',
+            ephemeral: true
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
         return;
     }
 
-    // Clear any existing game state
     activeGames.delete(userId);
 
     const embed = new EmbedBuilder()
@@ -117,11 +131,11 @@ async function handleCustomBet(interaction) {
 
     const embed = new EmbedBuilder()
         .setTitle('💰 Custom Bet Amount')
-        .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExample: `!bet 1500`')
+        .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExamples: `!bet 1500`, `!bet 2.5k`, `!bet 10m`')
         .setColor('#FFD700')
         .addFields(
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
-            { name: '💡 Tip', value: 'Minimum bet: 100 credits', inline: true }
+            { name: '💡 Tip', value: 'Minimum bet: 100 credits\nSupports: k, m, b suffixes', inline: true }
         );
 
     const backRow = new ActionRowBuilder()
@@ -131,7 +145,6 @@ async function handleCustomBet(interaction) {
 
     await interaction.update({ embeds: [embed], components: [backRow] });
 
-    // Set up message collector for custom bet
     const filter = (message) => {
         return message.author.id === userId && message.content.startsWith('!bet');
     };
@@ -139,7 +152,8 @@ async function handleCustomBet(interaction) {
     const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
 
     collector.on('collect', async (message) => {
-        const betAmount = parseInt(message.content.split(' ')[1]);
+        const betInput = message.content.split(' ')[1];
+        const betAmount = parseFormattedNumber(betInput);
 
         if (isNaN(betAmount) || betAmount < 100) {
             await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
@@ -197,187 +211,153 @@ async function setupGame(interaction, betAmount, mineCount) {
         return;
     }
 
-    // Generate seed and mine positions
     const seed = generateSeed();
-    const minePositions = generateMinesPositions(seed, mineCount);
+    const minePositions = generateMinesResults(seed, mineCount);
 
-    // Store game state
     const gameState = {
         userId,
         betAmount,
         mineCount,
         minePositions,
-        revealedTiles: [],
-        seed,
-        multiplier: 1,
-        gameActive: true
+        revealedTiles: new Set(),
+        gameActive: true,
+        seed
     };
 
     activeGames.set(userId, gameState);
-
-    // Deduct bet from balance
     await updateUserBalance(userId, balance - betAmount);
 
-    // Create game board
     const embed = new EmbedBuilder()
-        .setTitle('💣 Mines Game - Active')
-        .setDescription(`Bet: ${formatCurrency(betAmount)} | Mines: ${mineCount} | Multiplier: 1.00x`)
+        .setTitle('💣 Mines Game - In Progress')
+        .setDescription('Click tiles to reveal them. Avoid the mines!')
         .setColor('#00FF00')
         .addFields(
-            { name: '💡 Tip', value: 'Click tiles to reveal them. Avoid the mines!', inline: false }
+            { name: '💰 Bet Amount', value: formatCurrency(betAmount), inline: true },
+            { name: '💣 Mines', value: mineCount.toString(), inline: true },
+            { name: '💎 Safe Tiles', value: (25 - mineCount).toString(), inline: true }
         );
 
-    const components = createGameBoard(gameState);
-
-    await interaction.editReply({ embeds: [embed], components });
-}
-
-function createGameBoard(gameState) {
-    const components = [];
-
-    for (let row = 0; row < 5; row++) {
-        const actionRow = new ActionRowBuilder();
-        for (let col = 0; col < 5; col++) {
-            const position = row * 5 + col;
-            const isRevealed = gameState.revealedTiles.includes(position);
-            const isMine = gameState.minePositions.includes(position);
-
-            let emoji = '⬜';
-            let style = ButtonStyle.Secondary;
-            let disabled = false;
-
-            if (isRevealed) {
-                if (isMine) {
-                    emoji = '💣';
-                    style = ButtonStyle.Danger;
-                } else {
-                    emoji = '💎';
-                    style = ButtonStyle.Success;
-                }
-                disabled = true;
-            }
-
-            if (!gameState.gameActive) {
-                if (isMine && !isRevealed) {
-                    emoji = '💣';
-                    style = ButtonStyle.Danger;
-                }
-                disabled = true;
-            }
-
-            actionRow.addComponents(
+    const rows = [];
+    for (let i = 0; i < 5; i++) {
+        const row = new ActionRowBuilder();
+        for (let j = 0; j < 5; j++) {
+            const tileNumber = i * 5 + j;
+            row.addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`mines_play_${position}`)
-                    .setLabel(emoji)
-                    .setStyle(style)
-                    .setDisabled(disabled)
+                    .setCustomId(`mines_tile_${tileNumber}`)
+                    .setLabel('?')
+                    .setStyle(ButtonStyle.Secondary)
             );
         }
-        components.push(actionRow);
+        rows.push(row);
     }
 
-    // Add control buttons
-    if (gameState.gameActive && gameState.revealedTiles.length > 0) {
-        const controlRow = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('mines_cashout')
-                    .setLabel(`💰 Cash Out (${gameState.multiplier.toFixed(2)}x)`)
-                    .setStyle(ButtonStyle.Success)
-            );
-        components.push(controlRow);
-    }
-
-    if (!gameState.gameActive) {
-        const newGameRow = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('mines_newgame')
-                    .setLabel('🎮 New Game')
-                    .setStyle(ButtonStyle.Primary)
-            );
-        components.push(newGameRow);
-    }
-
-    return components;
+    await interaction.editReply({ embeds: [embed], components: rows });
 }
 
-async function playTile(interaction, position) {
+async function revealTile(interaction, tileNumber) {
     const userId = interaction.user.id;
     const gameState = activeGames.get(userId);
 
     if (!gameState || !gameState.gameActive) {
-        await interaction.reply({ content: 'No active game found!', ephemeral: true });
+        await interaction.deferUpdate();
         return;
     }
 
-    if (gameState.revealedTiles.includes(position)) {
-        await interaction.reply({ content: 'Tile already revealed!', ephemeral: true });
+    if (gameState.revealedTiles.has(tileNumber)) {
+        await interaction.deferUpdate();
         return;
     }
 
-    gameState.revealedTiles.push(position);
+    gameState.revealedTiles.add(tileNumber);
 
-    if (gameState.minePositions.includes(position)) {
-        // Hit mine - game over
-        gameState.gameActive = false;
+    if (gameState.minePositions.includes(tileNumber)) {
+        await gameOver(interaction, gameState, tileNumber);
+    } else {
+        await updateGameBoard(interaction, gameState);
+    }
+}
 
-        const embed = new EmbedBuilder()
-            .setTitle('💥 BOOM! Game Over')
-            .setDescription(`You hit a mine! Lost ${formatCurrency(gameState.betAmount)}`)
-            .setColor('#FF0000');
+async function updateGameBoard(interaction, gameState) {
+    const revealedSafeTiles = gameState.revealedTiles.size;
+    const totalSafeTiles = 25 - gameState.mineCount;
+    const multiplier = Math.pow(1.1, revealedSafeTiles);
+    const potentialWin = Math.floor(gameState.betAmount * multiplier);
 
-        await logGame(
-            userId, 
-            'Mines', 
-            gameState.betAmount, 
-            'Loss', 
-            0, 
-            -gameState.betAmount, 
-            gameState.seed.hash
+    const embed = new EmbedBuilder()
+        .setTitle('💣 Mines Game - In Progress')
+        .setDescription('Click tiles to reveal them. Avoid the mines!')
+        .setColor('#00FF00')
+        .addFields(
+            { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
+            { name: '💣 Mines', value: gameState.mineCount.toString(), inline: true },
+            { name: '💎 Revealed', value: `${revealedSafeTiles}/${totalSafeTiles}`, inline: true },
+            { name: '🎯 Current Multiplier', value: `${multiplier.toFixed(2)}x`, inline: true },
+            { name: '💰 Potential Win', value: formatCurrency(potentialWin), inline: true }
         );
 
-        const components = createGameBoard(gameState);
-        await interaction.editReply({ embeds: [embed], components });
-
-    } else {
-        // Safe tile - calculate new multiplier
-        const safeTiles = 25 - gameState.mineCount;
-        const tilesRevealed = gameState.revealedTiles.length;
-        gameState.multiplier = calculateMinesMultiplier(gameState.mineCount, tilesRevealed);
-
-        let description = `Bet: ${formatCurrency(gameState.betAmount)} | Mines: ${gameState.mineCount} | Multiplier: ${gameState.multiplier.toFixed(2)}x`;
-
-        if (tilesRevealed === safeTiles) {
-            // Won all safe tiles - auto cashout
-            gameState.gameActive = false;
-            const winAmount = Math.floor(gameState.betAmount * gameState.multiplier);
-            const profit = winAmount - gameState.betAmount;
-
-            const currentBalance = await getUserBalance(userId);
-            await updateUserBalance(userId, currentBalance + winAmount);
-
-            description = `🎉 Perfect game! All safe tiles revealed! +${formatCurrency(profit)}`;
-
-            await logGame(
-                userId, 
-                'Mines', 
-                gameState.betAmount, 
-                'Win', 
-                gameState.multiplier, 
-                profit, 
-                gameState.seed.hash
+    const rows = [];
+    for (let i = 0; i < 5; i++) {
+        const row = new ActionRowBuilder();
+        for (let j = 0; j < 5; j++) {
+            const tileNumber = i * 5 + j;
+            const isRevealed = gameState.revealedTiles.has(tileNumber);
+            
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`mines_tile_${tileNumber}`)
+                    .setLabel(isRevealed ? '💎' : '?')
+                    .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                    .setDisabled(isRevealed)
             );
         }
-
-        const embed = new EmbedBuilder()
-            .setTitle('💣 Mines Game - Active')
-            .setDescription(description)
-            .setColor(gameState.gameActive ? '#00FF00' : '#FFD700');
-
-        const components = createGameBoard(gameState);
-        await interaction.editReply({ embeds: [embed], components });
+        rows.push(row);
     }
+
+    const cashoutRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_cashout')
+                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                .setStyle(ButtonStyle.Primary)
+        );
+
+    rows.push(cashoutRow);
+
+    await interaction.update({ embeds: [embed], components: rows });
+}
+
+async function gameOver(interaction, gameState, hitMine) {
+    gameState.gameActive = false;
+
+    const embed = new EmbedBuilder()
+        .setTitle('💣 Game Over!')
+        .setDescription('You hit a mine!')
+        .setColor('#FF0000')
+        .addFields(
+            { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
+            { name: '💣 Hit Mine', value: `Position ${hitMine}`, inline: true }
+        );
+
+    await logGame(
+        gameState.userId,
+        'Mines',
+        gameState.betAmount,
+        'Loss',
+        0,
+        -gameState.betAmount,
+        gameState.seed.hash
+    );
+
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_newgame')
+                .setLabel('🎮 New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+
+    await interaction.update({ embeds: [embed], components: [newGameRow] });
 }
 
 async function cashOut(interaction) {
@@ -385,17 +365,14 @@ async function cashOut(interaction) {
     const gameState = activeGames.get(userId);
 
     if (!gameState || !gameState.gameActive) {
-        await interaction.reply({ content: 'No active game found!', ephemeral: true });
-        return;
-    }
-
-    if (gameState.revealedTiles.length === 0) {
-        await interaction.reply({ content: 'You need to reveal at least one tile before cashing out!', ephemeral: true });
+        await interaction.deferUpdate();
         return;
     }
 
     gameState.gameActive = false;
-    const winAmount = Math.floor(gameState.betAmount * gameState.multiplier);
+    const revealedSafeTiles = gameState.revealedTiles.size;
+    const multiplier = Math.pow(1.1, revealedSafeTiles);
+    const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
 
     const currentBalance = await getUserBalance(userId);
@@ -403,23 +380,34 @@ async function cashOut(interaction) {
 
     const embed = new EmbedBuilder()
         .setTitle('💰 Cashed Out!')
-        .setDescription(`You won ${formatCurrency(profit)} with a ${gameState.multiplier.toFixed(2)}x multiplier!`)
-        .setColor('#FFD700');
+        .setDescription('You successfully cashed out!')
+        .setColor('#00FF00')
+        .addFields(
+            { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
+            { name: '🎯 Multiplier', value: `${multiplier.toFixed(2)}x`, inline: true },
+            { name: '💰 Win Amount', value: formatCurrency(winAmount), inline: true },
+            { name: '📈 Profit', value: formatCurrency(profit), inline: true }
+        );
 
     await logGame(
-        userId, 
-        'Mines', 
-        gameState.betAmount, 
-        'Win', 
-        gameState.multiplier, 
-        profit, 
+        userId,
+        'Mines',
+        gameState.betAmount,
+        'Win',
+        multiplier,
+        profit,
         gameState.seed.hash
     );
 
-    const components = createGameBoard(gameState);
-    await interaction.update({ embeds: [embed], components });
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_newgame')
+                .setLabel('🎮 New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+
+    await interaction.update({ embeds: [embed], components: [newGameRow] });
 }
 
-module.exports = {
-    handleButton
-};
+module.exports = { handleButton, startGame };

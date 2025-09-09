@@ -1,15 +1,27 @@
+
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency, parseCurrency } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
 const { generateSeed, generateCrashMultiplier } = require('../utils/provablyFair');
 
-// Store active games
 const activeGames = new Map();
+
+function parseFormattedNumber(input) {
+    if (typeof input === 'number') return input;
+    
+    const str = input.toString().toLowerCase().replace(/,/g, '');
+    const num = parseFloat(str);
+    
+    if (str.includes('k')) return Math.floor(num * 1000);
+    if (str.includes('m')) return Math.floor(num * 1000000);
+    if (str.includes('b')) return Math.floor(num * 1000000000);
+    
+    return Math.floor(num);
+}
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        // Always defer the interaction first to prevent timeout
         if (!interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
@@ -25,8 +37,8 @@ async function handleButton(interaction, params) {
                 }
                 await handleBetSelection(interaction, parseInt(data[0]));
                 break;
-            case 'join':
-                await joinGame(interaction);
+            case 'cashout':
+                await cashOut(interaction);
                 break;
             case 'newgame':
                 await startGame(interaction);
@@ -47,14 +59,19 @@ async function startGame(interaction) {
     const balance = await getUserBalance(userId);
 
     if (balance < 100) {
-        await interaction.reply({
+        const reply = {
             content: 'You need at least 100 credits to play Crash!',
             ephemeral: true
-        });
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
         return;
     }
 
-    // Clear any existing game state
     activeGames.delete(userId);
 
     const embed = new EmbedBuilder()
@@ -87,14 +104,67 @@ async function startGame(interaction) {
     }
 }
 
+async function handleCustomBet(interaction) {
+    const userId = interaction.user.id;
+    const balance = await getUserBalance(userId);
+
+    const embed = new EmbedBuilder()
+        .setTitle('💰 Custom Bet Amount')
+        .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExamples: `!bet 1500`, `!bet 2.5k`, `!bet 10m`')
+        .setColor('#FFD700')
+        .addFields(
+            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
+            { name: '💡 Tip', value: 'Minimum bet: 100 credits\nSupports: k, m, b suffixes', inline: true }
+        );
+
+    const backRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('crash_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
+        );
+
+    await interaction.editReply({ embeds: [embed], components: [backRow] });
+
+    const filter = (message) => {
+        return message.author.id === userId && message.content.startsWith('!bet');
+    };
+
+    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
+
+    collector.on('collect', async (message) => {
+        const betInput = message.content.split(' ')[1];
+        const betAmount = parseFormattedNumber(betInput);
+
+        if (isNaN(betAmount) || betAmount < 100) {
+            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
+            return;
+        }
+
+        if (betAmount > balance) {
+            await message.reply('Insufficient balance!');
+            return;
+        }
+
+        await message.delete().catch(() => {});
+        await message.reply(`Custom bet set: ${formatCurrency(betAmount)}!`).then(msg => {
+            setTimeout(() => msg.delete().catch(() => {}), 3000);
+        });
+
+        await startCrashGame(interaction, betAmount);
+    });
+
+    collector.on('end', (collected, reason) => {
+        if (reason === 'time' && collected.size === 0) {
+            startGame(interaction);
+        }
+    });
+}
+
+async function handleBetSelection(interaction, betAmount) {
+    await startCrashGame(interaction, betAmount);
+}
+
 async function startCrashGame(interaction, betAmount) {
     const userId = interaction.user.id;
-
-    // Defer the interaction if not already handled
-    if (!interaction.replied && !interaction.deferred) {
-        await interaction.deferUpdate();
-    }
-
     const balance = await getUserBalance(userId);
 
     if (balance < betAmount) {
@@ -102,7 +172,6 @@ async function startCrashGame(interaction, betAmount) {
         return;
     }
 
-    // Generate crash point
     const seed = generateSeed();
     const crashPoint = generateCrashMultiplier(seed);
 
@@ -119,65 +188,8 @@ async function startCrashGame(interaction, betAmount) {
     };
 
     activeGames.set(userId, gameState);
-
-    // Deduct bet from balance
     await updateUserBalance(userId, balance - betAmount);
-
-    // Start the game loop
     await updateCrashGame(interaction, gameState);
-}
-
-async function handleCustomBet(interaction) {
-    const userId = interaction.user.id;
-    const balance = await getUserBalance(userId);
-
-    const embed = new EmbedBuilder()
-        .setTitle('💰 Custom Bet Amount')
-        .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExample: `!bet 1500`')
-        .setColor('#FFD700')
-        .addFields(
-            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
-            { name: '💡 Tip', value: 'Minimum bet: 100 credits', inline: true }
-        );
-
-    const backRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder().setCustomId('crash_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
-        );
-
-    await interaction.editReply({ embeds: [embed], components: [backRow] });
-
-    // Set up message collector for custom bet
-    const filter = (message) => {
-        return message.author.id === userId && message.content.startsWith('!bet');
-    };
-
-    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
-
-    collector.on('collect', async (message) => {
-        const betAmount = parseInt(message.content.split(' ')[1]);
-
-        if (isNaN(betAmount) || betAmount < 100) {
-            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
-            return;
-        }
-
-        if (betAmount > balance) {
-            await message.reply('Insufficient balance!');
-            return;
-        }
-
-        await message.delete().catch(() => {});
-        // Remove the problematic message reply that causes the reference error
-
-        await startCrashGame(interaction, betAmount); // Changed from handleBetSelection to startCrashGame
-    });
-
-    collector.on('end', (collected, reason) => {
-        if (reason === 'time' && collected.size === 0) {
-            startGame(interaction);
-        }
-    });
 }
 
 async function updateCrashGame(interaction, gameState) {
@@ -185,46 +197,78 @@ async function updateCrashGame(interaction, gameState) {
         return;
     }
 
-    const elapsed = (Date.now() - gameState.startTime) / 1000; // seconds
+    const elapsed = (Date.now() - gameState.startTime) / 1000;
     let newMultiplier;
 
-    // Calculate speed based on current multiplier
     if (gameState.currentMultiplier < 2) {
-        newMultiplier = 1 + (elapsed * 0.1); // 0.1x per second
+        newMultiplier = 1 + (elapsed * 0.1);
     } else if (gameState.currentMultiplier < 5) {
-        newMultiplier = 1 + (elapsed * 0.2); // 0.2x per second
+        newMultiplier = 1 + (elapsed * 0.2);
     } else {
-        // Double speed every 5x
         const speedMultiplier = Math.pow(2, Math.floor(gameState.currentMultiplier / 5));
-        const baseSpeed = Math.min(speedMultiplier * 0.2, 5); // Cap at 5x per second
+        const baseSpeed = Math.min(speedMultiplier * 0.2, 5);
         newMultiplier = 1 + (elapsed * baseSpeed);
     }
 
     gameState.currentMultiplier = parseFloat(newMultiplier.toFixed(2));
 
-    // Check if crashed
     if (gameState.currentMultiplier >= gameState.crashPoint) {
         gameState.crashed = true;
         gameState.gameActive = false;
+        await endCrashGame(interaction, gameState, true);
+        return;
+    }
 
+    const embed = new EmbedBuilder()
+        .setTitle('🚀 Crash Game - FLYING!')
+        .setDescription(`**${gameState.currentMultiplier.toFixed(2)}x**`)
+        .setColor('#00FF00')
+        .addFields(
+            { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
+            { name: '💰 Current Value', value: formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier)), inline: true }
+        );
+
+    const cashoutRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('crash_cashout')
+                .setLabel(`💰 Cash Out - ${formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier))}`)
+                .setStyle(ButtonStyle.Success)
+        );
+
+    await interaction.editReply({ embeds: [embed], components: [cashoutRow] });
+
+    setTimeout(() => updateCrashGame(interaction, gameState), 100);
+}
+
+async function cashOut(interaction) {
+    const userId = interaction.user.id;
+    const gameState = activeGames.get(userId);
+
+    if (!gameState || !gameState.gameActive || gameState.crashed || gameState.cashedOut) {
+        await interaction.deferUpdate();
+        return;
+    }
+
+    gameState.cashedOut = true;
+    gameState.gameActive = false;
+    await endCrashGame(interaction, gameState, false);
+}
+
+async function endCrashGame(interaction, gameState, crashed) {
+    const userId = gameState.userId;
+    
+    if (crashed) {
         const embed = new EmbedBuilder()
             .setTitle('💥 CRASHED!')
-            .setDescription(`The rocket crashed at ${gameState.crashPoint}x!`)
+            .setDescription(`Crashed at **${gameState.crashPoint.toFixed(2)}x**`)
             .setColor('#FF0000')
             .addFields(
-                { name: '💸 Result', value: `Lost ${formatCurrency(gameState.betAmount)}`, inline: true },
-                { name: '🚀 Crash Point', value: `${gameState.crashPoint}x`, inline: true }
+                { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
+                { name: '💥 Crash Point', value: `${gameState.crashPoint.toFixed(2)}x`, inline: true }
             );
 
-        await logGame(
-            gameState.userId,
-            'Crash',
-            gameState.betAmount,
-            'Loss',
-            0,
-            -gameState.betAmount,
-            gameState.seed.hash
-        );
+        await logGame(userId, 'Crash', gameState.betAmount, 'Loss', 0, -gameState.betAmount, gameState.seed.hash);
 
         const newGameRow = new ActionRowBuilder()
             .addComponents(
@@ -235,105 +279,36 @@ async function updateCrashGame(interaction, gameState) {
             );
 
         await interaction.editReply({ embeds: [embed], components: [newGameRow] });
-        return;
+    } else {
+        const winAmount = Math.floor(gameState.betAmount * gameState.currentMultiplier);
+        const profit = winAmount - gameState.betAmount;
+        const currentBalance = await getUserBalance(userId);
+        
+        await updateUserBalance(userId, currentBalance + winAmount);
+
+        const embed = new EmbedBuilder()
+            .setTitle('💰 CASHED OUT!')
+            .setDescription(`Cashed out at **${gameState.currentMultiplier.toFixed(2)}x**`)
+            .setColor('#00FF00')
+            .addFields(
+                { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
+                { name: '🎯 Multiplier', value: `${gameState.currentMultiplier.toFixed(2)}x`, inline: true },
+                { name: '💰 Win Amount', value: formatCurrency(winAmount), inline: true },
+                { name: '📈 Profit', value: formatCurrency(profit), inline: true }
+            );
+
+        await logGame(userId, 'Crash', gameState.betAmount, 'Win', gameState.currentMultiplier, profit, gameState.seed.hash);
+
+        const newGameRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('crash_newgame')
+                    .setLabel('🎮 New Game')
+                    .setStyle(ButtonStyle.Primary)
+            );
+
+        await interaction.editReply({ embeds: [embed], components: [newGameRow] });
     }
-
-    // Update display
-    const embed = new EmbedBuilder()
-        .setTitle('🚀 Crash Game - FLYING!')
-        .setDescription(`Current Multiplier: **${gameState.currentMultiplier}x**`)
-        .setColor('#00FF00')
-        .addFields(
-            { name: '💰 Bet', value: formatCurrency(gameState.betAmount), inline: true },
-            { name: '📈 Potential Win', value: formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier)), inline: true },
-            { name: '⏱️ Time', value: `${elapsed.toFixed(1)}s`, inline: true }
-        );
-
-    const cashoutRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('crash_cashout')
-                .setLabel(`💰 Cash Out (${gameState.currentMultiplier}x)`)
-                .setStyle(ButtonStyle.Success)
-        );
-
-    await interaction.editReply({ embeds: [embed], components: [cashoutRow] });
-
-    // Continue updating every 200ms
-    setTimeout(() => {
-        if (gameState.gameActive && !gameState.crashed && !gameState.cashedOut) {
-            updateCrashGame(interaction, gameState);
-        }
-    }, 200);
 }
 
-async function cashOut(interaction) {
-    const userId = interaction.user.id;
-    const gameState = activeGames.get(userId);
-
-    if (!gameState || !gameState.gameActive || gameState.crashed || gameState.cashedOut) {
-        await interaction.reply({ content: 'Cannot cash out at this time!', ephemeral: true });
-        return;
-    }
-
-    gameState.cashedOut = true;
-    gameState.gameActive = false;
-
-    const winAmount = Math.floor(gameState.betAmount * gameState.currentMultiplier);
-    const profit = winAmount - gameState.betAmount;
-
-    const currentBalance = await getUserBalance(userId);
-    await updateUserBalance(userId, currentBalance + winAmount);
-
-    const embed = new EmbedBuilder()
-        .setTitle('💰 Cashed Out!')
-        .setDescription(`You cashed out at ${gameState.currentMultiplier}x! +${formatCurrency(profit)}`)
-        .setColor('#FFD700')
-        .addFields(
-            { name: '🚀 Cash Out Point', value: `${gameState.currentMultiplier}x`, inline: true },
-            { name: '💰 Profit', value: formatCurrency(profit), inline: true },
-            { name: '📊 Crash Point', value: `${gameState.crashPoint}x`, inline: true }
-        );
-
-    await logGame(
-        userId,
-        'Crash',
-        gameState.betAmount,
-        'Win',
-        gameState.currentMultiplier,
-        profit,
-        gameState.seed.hash
-    );
-
-    const newGameRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('crash_newgame')
-                .setLabel('🎮 New Game')
-                .setStyle(ButtonStyle.Primary)
-        );
-
-    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
-}
-
-// Placeholder for joinGame function if it exists elsewhere or is intended to be added.
-// If not used, it can be removed.
-async function joinGame(interaction) {
-    // This function is called when the 'join' action is triggered.
-    // Implement the game joining logic here.
-    // For now, let's assume it's a placeholder and reply with a message.
-    await interaction.editReply({ content: 'Joining game...', components: [] });
-}
-
-// Placeholder for handleBetSelection function.
-// This function is called when a specific bet amount is selected.
-async function handleBetSelection(interaction, betAmount) {
-    // This function is called when a specific bet amount is selected.
-    // Implement the logic to start the crash game with the selected bet amount.
-    await startCrashGame(interaction, betAmount);
-}
-
-
-module.exports = {
-    handleButton
-};
+module.exports = { handleButton, startGame };
