@@ -125,35 +125,47 @@ function generateCrashMultiplier(seed) {
 
 // Calculate Mines multipliers
 function calculateMinesMultiplier(mineCount, tilesRevealed) {
+    if (tilesRevealed === 0) return 1;
+    
     const totalTiles = 25;
     const safeTiles = totalTiles - mineCount;
     
     let multiplier = 1;
     for (let i = 0; i < tilesRevealed; i++) {
-        multiplier *= (safeTiles - i) / (totalTiles - i);
+        const safeRemaining = safeTiles - i;
+        const totalRemaining = totalTiles - i;
+        multiplier = multiplier * (totalRemaining / safeRemaining);
     }
     
-    return Math.max(1, Math.floor(multiplier * 100) / 100);
+    // Apply house edge (2%)
+    multiplier = multiplier * 0.98;
+    
+    return Math.max(1.01, Math.floor(multiplier * 100) / 100);
 }
 
 // Calculate Tower multipliers
 function calculateTowerMultiplier(difficulty, level) {
+    if (level < 0) return 1;
+    
     let baseMultiplier;
     switch (difficulty) {
         case 'easy':
-            baseMultiplier = 1.33; // 4 slots, 1 mine
+            baseMultiplier = 1.25; // 4 slots, 1 mine (3/4 chance)
             break;
         case 'medium':
-            baseMultiplier = 1.5; // 3 slots, 1 mine
+            baseMultiplier = 1.41; // 3 slots, 1 mine (2/3 chance)
             break;
         case 'hard':
-            baseMultiplier = 3.0; // 3 slots, 2 mines
+            baseMultiplier = 2.12; // 3 slots, 2 mines (1/3 chance)
             break;
         default:
-            baseMultiplier = 1.33;
+            baseMultiplier = 1.25;
     }
     
-    return Math.floor(Math.pow(baseMultiplier, level + 1) * 100) / 100;
+    const multiplier = Math.pow(baseMultiplier, level + 1);
+    
+    // Apply house edge (2%)
+    return Math.floor(multiplier * 0.98 * 100) / 100;
 }
 
 module.exports = {

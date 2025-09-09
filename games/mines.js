@@ -1,3 +1,4 @@
+
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { 
     getUserBalance, 
@@ -15,7 +16,6 @@ const {
 // Store active games
 const activeGames = new Map();
 
-// Handle button interactions
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
     
@@ -25,10 +25,14 @@ async function handleButton(interaction, params) {
                 await startGame(interaction);
                 break;
             case 'bet':
-                await handleSetup(interaction);
+                if (data[0] === 'custom') {
+                    // Handle custom bet (simplified for now)
+                    return;
+                }
+                await handleBetSelection(interaction, parseInt(data[0]));
                 break;
             case 'mines':
-                await handleSetup(interaction);
+                await handleMineSelection(interaction, parseInt(data[0]));
                 break;
             case 'play':
                 await playTile(interaction, parseInt(data[0]));
@@ -60,6 +64,9 @@ async function startGame(interaction) {
         return;
     }
     
+    // Clear any existing game state
+    activeGames.delete(userId);
+    
     const embed = new EmbedBuilder()
         .setTitle('💣 Mines Game')
         .setDescription('Select your bet amount and number of mines!')
@@ -75,7 +82,7 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_bet_500').setLabel('500').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_bet_1000').setLabel('1K').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_bet_5000').setLabel('5K').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('mines_bet_custom').setLabel('Custom').setStyle(ButtonStyle.Primary)
+            new ButtonBuilder().setCustomId('mines_bet_10000').setLabel('10K').setStyle(ButtonStyle.Primary)
         );
     
     const mineRow1 = new ActionRowBuilder()
@@ -97,6 +104,28 @@ async function startGame(interaction) {
         await interaction.editReply({ embeds: [embed], components: [betRow, mineRow1, mineRow2] });
     } else {
         await interaction.reply({ embeds: [embed], components: [betRow, mineRow1, mineRow2] });
+    }
+}
+
+async function handleBetSelection(interaction, betAmount) {
+    const userId = interaction.user.id;
+    let gameState = activeGames.get(userId) || {};
+    gameState.betAmount = betAmount;
+    activeGames.set(userId, gameState);
+    
+    if (gameState.mineCount) {
+        await setupGame(interaction, gameState.betAmount, gameState.mineCount);
+    }
+}
+
+async function handleMineSelection(interaction, mineCount) {
+    const userId = interaction.user.id;
+    let gameState = activeGames.get(userId) || {};
+    gameState.mineCount = mineCount;
+    activeGames.set(userId, gameState);
+    
+    if (gameState.betAmount) {
+        await setupGame(interaction, gameState.betAmount, gameState.mineCount);
     }
 }
 
@@ -253,7 +282,7 @@ async function playTile(interaction, position) {
         await interaction.update({ embeds: [embed], components });
         
     } else {
-        // Safe tile
+        // Safe tile - calculate new multiplier
         const safeTiles = 25 - gameState.mineCount;
         const tilesRevealed = gameState.revealedTiles.length;
         gameState.multiplier = calculateMinesMultiplier(gameState.mineCount, tilesRevealed);
@@ -261,7 +290,7 @@ async function playTile(interaction, position) {
         let description = `Bet: ${formatCurrency(gameState.betAmount)} | Mines: ${gameState.mineCount} | Multiplier: ${gameState.multiplier.toFixed(2)}x`;
         
         if (tilesRevealed === safeTiles) {
-            // Won all safe tiles
+            // Won all safe tiles - auto cashout
             gameState.gameActive = false;
             const winAmount = Math.floor(gameState.betAmount * gameState.multiplier);
             const profit = winAmount - gameState.betAmount;
@@ -269,7 +298,7 @@ async function playTile(interaction, position) {
             const currentBalance = await getUserBalance(userId);
             await updateUserBalance(userId, currentBalance + winAmount);
             
-            description = `🎉 You won! +${formatCurrency(profit)}`;
+            description = `🎉 Perfect game! All safe tiles revealed! +${formatCurrency(profit)}`;
             
             await logGame(
                 userId, 
@@ -301,6 +330,11 @@ async function cashOut(interaction) {
         return;
     }
     
+    if (gameState.revealedTiles.length === 0) {
+        await interaction.reply({ content: 'You need to reveal at least one tile before cashing out!', ephemeral: true });
+        return;
+    }
+    
     gameState.gameActive = false;
     const winAmount = Math.floor(gameState.betAmount * gameState.multiplier);
     const profit = winAmount - gameState.betAmount;
@@ -327,32 +361,6 @@ async function cashOut(interaction) {
     await interaction.update({ embeds: [embed], components });
 }
 
-// Handle bet and mine count selection
-async function handleSetup(interaction) {
-    const [_, type, value] = interaction.customId.split('_');
-    
-    if (type === 'bet' && value === 'custom') {
-        // Handle custom bet amount (could implement modal here)
-        return;
-    }
-    
-    const userId = interaction.user.id;
-    let gameData = activeGames.get(userId) || {};
-    
-    if (type === 'bet') {
-        gameData.betAmount = parseInt(value);
-    } else if (type === 'mines') {
-        gameData.mineCount = parseInt(value);
-    }
-    
-    activeGames.set(userId, gameData);
-    
-    if (gameData.betAmount && gameData.mineCount) {
-        await setupGame(interaction, gameData.betAmount, gameData.mineCount);
-    }
-}
-
 module.exports = {
-    handleButton,
-    handleSetup
+    handleButton
 };

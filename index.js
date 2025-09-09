@@ -76,33 +76,50 @@ client.on(Events.InteractionCreate, async interaction => {
 client.on(Events.InteractionCreate, async interaction => {
     if (!interaction.isButton()) return;
     
-    const [action, game, ...params] = interaction.customId.split('_');
+    const [game, action, ...params] = interaction.customId.split('_');
     
     try {
         switch (game) {
             case 'mines':
                 const minesHandler = require('./games/mines');
-                await minesHandler.handleButton(interaction, params);
+                await minesHandler.handleButton(interaction, [action, ...params]);
                 break;
             case 'towers':
                 const towersHandler = require('./games/towers');
-                await towersHandler.handleButton(interaction, params);
+                await towersHandler.handleButton(interaction, [action, ...params]);
                 break;
             case 'slots':
                 const slotsHandler = require('./games/slots');
-                await slotsHandler.handleButton(interaction, params);
+                await slotsHandler.handleButton(interaction, [action, ...params]);
                 break;
             case 'crash':
                 const crashHandler = require('./games/crash');
-                await crashHandler.handleButton(interaction, params);
+                await crashHandler.handleButton(interaction, [action, ...params]);
                 break;
             case 'withdraw':
                 const withdrawHandler = require('./utils/withdraw');
-                await withdrawHandler.handleButton(interaction, params);
+                await withdrawHandler.handleButton(interaction, [action, ...params]);
                 break;
         }
     } catch (error) {
         console.error('Button interaction error:', error);
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: 'There was an error processing your request!', ephemeral: true });
+        }
+    }
+});
+
+// Handle modal submissions
+client.on(Events.InteractionCreate, async interaction => {
+    if (!interaction.isModalSubmit()) return;
+    
+    try {
+        if (interaction.customId === 'withdraw_modal') {
+            const withdrawHandler = require('./utils/withdraw');
+            await withdrawHandler.handleModal(interaction);
+        }
+    } catch (error) {
+        console.error('Modal interaction error:', error);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: 'There was an error processing your request!', ephemeral: true });
         }
