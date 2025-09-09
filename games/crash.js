@@ -1,4 +1,3 @@
-
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency, parseCurrency } = require('../utils/database');
 const { generateSeed, generateCrashMultiplier } = require('../utils/provablyFair');
@@ -8,7 +7,7 @@ const activeGames = new Map();
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
-    
+
     try {
         switch (action) {
             case 'start':
@@ -39,7 +38,7 @@ async function handleButton(interaction, params) {
 async function startGame(interaction) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
-    
+
     if (balance < 100) {
         await interaction.reply({ 
             content: 'You need at least 100 credits to play Crash!', 
@@ -47,10 +46,10 @@ async function startGame(interaction) {
         });
         return;
     }
-    
+
     // Clear any existing game state
     activeGames.delete(userId);
-    
+
     const embed = new EmbedBuilder()
         .setTitle('🚀 Crash Game')
         .setDescription('Select your bet amount to start!')
@@ -59,7 +58,7 @@ async function startGame(interaction) {
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
             { name: '🎯 Goal', value: 'Cash out before the crash!', inline: true }
         );
-    
+
     const betRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder().setCustomId('crash_bet_100').setLabel('100').setStyle(ButtonStyle.Secondary),
@@ -68,7 +67,7 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('crash_bet_5000').setLabel('5K').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('crash_bet_10000').setLabel('10K').setStyle(ButtonStyle.Primary)
         );
-    
+
     if (interaction.replied || interaction.deferred) {
         await interaction.editReply({ embeds: [embed], components: [betRow] });
     } else {
@@ -79,16 +78,16 @@ async function startGame(interaction) {
 async function startCrashGame(interaction, betAmount) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
-    
+
     if (balance < betAmount) {
         await interaction.editReply({ content: 'Insufficient balance!', components: [] });
         return;
     }
-    
+
     // Generate crash point
     const seed = generateSeed();
     const crashPoint = generateCrashMultiplier(seed);
-    
+
     const gameState = {
         userId,
         betAmount,
@@ -100,12 +99,12 @@ async function startCrashGame(interaction, betAmount) {
         cashedOut: false,
         startTime: Date.now()
     };
-    
+
     activeGames.set(userId, gameState);
-    
+
     // Deduct bet from balance
     await updateUserBalance(userId, balance - betAmount);
-    
+
     // Start the game loop
     await updateCrashGame(interaction, gameState);
 }
@@ -114,10 +113,10 @@ async function updateCrashGame(interaction, gameState) {
     if (!gameState.gameActive || gameState.crashed || gameState.cashedOut) {
         return;
     }
-    
+
     const elapsed = (Date.now() - gameState.startTime) / 1000; // seconds
     let newMultiplier;
-    
+
     // Calculate speed based on current multiplier
     if (gameState.currentMultiplier < 2) {
         newMultiplier = 1 + (elapsed * 0.1); // 0.1x per second
@@ -129,14 +128,14 @@ async function updateCrashGame(interaction, gameState) {
         const baseSpeed = Math.min(speedMultiplier * 0.2, 5); // Cap at 5x per second
         newMultiplier = 1 + (elapsed * baseSpeed);
     }
-    
+
     gameState.currentMultiplier = parseFloat(newMultiplier.toFixed(2));
-    
+
     // Check if crashed
     if (gameState.currentMultiplier >= gameState.crashPoint) {
         gameState.crashed = true;
         gameState.gameActive = false;
-        
+
         const embed = new EmbedBuilder()
             .setTitle('💥 CRASHED!')
             .setDescription(`The rocket crashed at ${gameState.crashPoint}x!`)
@@ -145,7 +144,7 @@ async function updateCrashGame(interaction, gameState) {
                 { name: '💸 Result', value: `Lost ${formatCurrency(gameState.betAmount)}`, inline: true },
                 { name: '🚀 Crash Point', value: `${gameState.crashPoint}x`, inline: true }
             );
-        
+
         await logGame(
             gameState.userId,
             'Crash',
@@ -155,7 +154,7 @@ async function updateCrashGame(interaction, gameState) {
             -gameState.betAmount,
             gameState.seed.hash
         );
-        
+
         const newGameRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -163,11 +162,11 @@ async function updateCrashGame(interaction, gameState) {
                     .setLabel('🎮 New Game')
                     .setStyle(ButtonStyle.Primary)
             );
-        
+
         await interaction.editReply({ embeds: [embed], components: [newGameRow] });
         return;
     }
-    
+
     // Update display
     const embed = new EmbedBuilder()
         .setTitle('🚀 Crash Game - FLYING!')
@@ -178,7 +177,7 @@ async function updateCrashGame(interaction, gameState) {
             { name: '📈 Potential Win', value: formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier)), inline: true },
             { name: '⏱️ Time', value: `${elapsed.toFixed(1)}s`, inline: true }
         );
-    
+
     const cashoutRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
@@ -186,9 +185,9 @@ async function updateCrashGame(interaction, gameState) {
                 .setLabel(`💰 Cash Out (${gameState.currentMultiplier}x)`)
                 .setStyle(ButtonStyle.Success)
         );
-    
+
     await interaction.editReply({ embeds: [embed], components: [cashoutRow] });
-    
+
     // Continue updating every 200ms
     setTimeout(() => {
         if (gameState.gameActive && !gameState.crashed && !gameState.cashedOut) {
@@ -200,21 +199,21 @@ async function updateCrashGame(interaction, gameState) {
 async function cashOut(interaction) {
     const userId = interaction.user.id;
     const gameState = activeGames.get(userId);
-    
+
     if (!gameState || !gameState.gameActive || gameState.crashed || gameState.cashedOut) {
         await interaction.reply({ content: 'Cannot cash out at this time!', ephemeral: true });
         return;
     }
-    
+
     gameState.cashedOut = true;
     gameState.gameActive = false;
-    
+
     const winAmount = Math.floor(gameState.betAmount * gameState.currentMultiplier);
     const profit = winAmount - gameState.betAmount;
-    
+
     const currentBalance = await getUserBalance(userId);
     await updateUserBalance(userId, currentBalance + winAmount);
-    
+
     const embed = new EmbedBuilder()
         .setTitle('💰 Cashed Out!')
         .setDescription(`You cashed out at ${gameState.currentMultiplier}x! +${formatCurrency(profit)}`)
@@ -224,7 +223,7 @@ async function cashOut(interaction) {
             { name: '💰 Profit', value: formatCurrency(profit), inline: true },
             { name: '📊 Crash Point', value: `${gameState.crashPoint}x`, inline: true }
         );
-    
+
     await logGame(
         userId,
         'Crash',
@@ -234,7 +233,7 @@ async function cashOut(interaction) {
         profit,
         gameState.seed.hash
     );
-    
+
     const newGameRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
@@ -242,7 +241,7 @@ async function cashOut(interaction) {
                 .setLabel('🎮 New Game')
                 .setStyle(ButtonStyle.Primary)
         );
-    
+
     await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
