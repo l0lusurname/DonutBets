@@ -37,7 +37,7 @@ function verifySeed(serverSeed, clientSeed, nonce, expectedHash) {
 }
 
 // Generate mines positions for Mines game
-function generateMinesPositions(seed, mineCount) {
+function generateMinesResults(seed, mineCount) {
     const positions = [];
     const used = new Set();
     
@@ -52,6 +52,18 @@ function generateMinesPositions(seed, mineCount) {
     }
     
     return positions.sort((a, b) => a - b);
+}
+
+// Generate towers correct path
+function generateTowersResults(seed, levels, blocksPerLevel) {
+    const correctPath = [];
+    
+    for (let level = 0; level < levels; level++) {
+        const correctBlock = getRandomFromSeed(seed, 0, blocksPerLevel - 1, level + 200);
+        correctPath.push(correctBlock);
+    }
+    
+    return correctPath;
 }
 
 // Generate tower mine positions
@@ -173,10 +185,12 @@ module.exports = {
     getRandomFromSeed,
     getRandomArray,
     verifySeed,
-    generateMinesPositions,
+    generateMinesResults,
+    generateTowersResults,
     generateTowerMines,
     generateSlotResults,
     generateCrashMultiplier,
     calculateMinesMultiplier,
     calculateTowerMultiplier
+}ateTowerMultiplier
 };
