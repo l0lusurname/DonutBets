@@ -60,6 +60,21 @@ client.on(Events.InteractionCreate, async interaction => {
         return;
     }
 
+    // Check if it's a gambling command
+    const gamblingCommands = ['mines', 'towers', 'crash', 'slots', 'cashout'];
+    if (gamblingCommands.includes(interaction.commandName)) {
+        // Check if user is in their private gambling channel
+        const expectedChannelName = `gambling-${interaction.user.username.toLowerCase()}`;
+        
+        if (interaction.channel.name !== expectedChannelName) {
+            await interaction.reply({ 
+                content: '🚫 Gambling commands can only be used in your private gambling room! Use `/setup` to create the gambling channels if they don\'t exist, then click the button in the start-gambling channel to create your room.', 
+                flags: 64 
+            });
+            return;
+        }
+    }
+
     try {
         // Ensure user exists in database before processing command
         await ensureUserExists(interaction.user.id);
@@ -83,6 +98,69 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
         // Ensure user exists in database before processing
         await ensureUserExists(interaction.user.id);
+        
+        // Handle gambling room creation
+        if (game === 'gambling' && action === 'create' && params[0] === 'room') {
+            const { PermissionFlagsBits } = require('discord.js');
+            
+            // Check if user already has a gambling channel
+            const existingChannel = interaction.guild.channels.cache.find(
+                channel => channel.name === `gambling-${interaction.user.username.toLowerCase()}` && channel.type === 0
+            );
+            
+            if (existingChannel) {
+                await interaction.reply({ content: `You already have a gambling room: ${existingChannel}`, flags: 64 });
+                return;
+            }
+            
+            // Find gambling category
+            const category = interaction.guild.channels.cache.find(
+                channel => channel.name === '🎰 GAMBLING' && channel.type === 4
+            );
+            
+            if (!category) {
+                await interaction.reply({ content: 'Gambling category not found. Please run `/setup` first.', flags: 64 });
+                return;
+            }
+            
+            // Create private gambling channel for user
+            const gamblingChannel = await interaction.guild.channels.create({
+                name: `gambling-${interaction.user.username.toLowerCase()}`,
+                type: 0, // Text channel
+                parent: category.id,
+                permissionOverwrites: [
+                    {
+                        id: interaction.guild.roles.everyone.id,
+                        deny: [PermissionFlagsBits.ViewChannel],
+                    },
+                    {
+                        id: interaction.user.id,
+                        allow: [
+                            PermissionFlagsBits.ViewChannel,
+                            PermissionFlagsBits.SendMessages,
+                            PermissionFlagsBits.ReadMessageHistory,
+                            PermissionFlagsBits.UseApplicationCommands
+                        ],
+                    },
+                ],
+            });
+            
+            const { EmbedBuilder } = require('discord.js');
+            const welcomeEmbed = new EmbedBuilder()
+                .setTitle('🎰 Your Private Gambling Room!')
+                .setDescription('Welcome to your personal gambling space! Use the commands below to start playing.')
+                .setColor('#FFD700')
+                .addFields(
+                    { name: '🎮 Game Commands', value: '`/mines` - Play Mines\n`/towers` - Play Towers\n`/crash` - Play Crash\n`/slots` - Play Slots', inline: true },
+                    { name: '💰 Account Commands', value: '`/balance` - Check balance\n`/deposit` - Add credits\n`/withdraw` - Request withdrawal', inline: true }
+                )
+                .setFooter({ text: 'Good luck and gamble responsibly!' })
+                .setTimestamp();
+            
+            await gamblingChannel.send({ embeds: [welcomeEmbed] });
+            await interaction.reply({ content: `Your gambling room has been created: ${gamblingChannel}`, flags: 64 });
+            return;
+        }
         
         switch (game) {
             case 'mines':

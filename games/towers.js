@@ -112,7 +112,7 @@ async function startGame(interaction) {
 
     const difficultyRow = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy: 4 blocks, 1 safe').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy: 4 blocks, 3 safe').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium: 3 blocks, 1 safe').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 2 blocks, 1 safe').setStyle(ButtonStyle.Danger)
         );

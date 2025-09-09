@@ -81,7 +81,7 @@ function generateTowerMines(seed, difficulty) {
             break;
         case 'medium':
             slotsPerLevel = 3;
-            minesPerLevel = 1;  // 1 mine, 2 safe blocks  
+            minesPerLevel = 2;  // 2 mines, 1 safe block  
             break;
         case 'hard':
             slotsPerLevel = 2;
