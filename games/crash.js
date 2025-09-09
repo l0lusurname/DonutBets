@@ -15,7 +15,7 @@ async function handleButton(interaction, params) {
                 break;
             case 'bet':
                 if (data[0] === 'custom') {
-                    // Handle custom bet (simplified for now)
+                    await handleCustomBet(interaction);
                     return;
                 }
                 await startCrashGame(interaction, parseInt(data[0]));
@@ -68,15 +68,26 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('crash_bet_10000').setLabel('10K').setStyle(ButtonStyle.Primary)
         );
 
+    const customRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('crash_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
+        );
+
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow] });
     }
 }
 
 async function startCrashGame(interaction, betAmount) {
     const userId = interaction.user.id;
+    
+    // Defer the interaction if not already handled
+    if (!interaction.replied && !interaction.deferred) {
+        await interaction.deferUpdate();
+    }
+    
     const balance = await getUserBalance(userId);
 
     if (balance < betAmount) {
@@ -98,6 +109,63 @@ async function startCrashGame(interaction, betAmount) {
         crashed: false,
         cashedOut: false,
         startTime: Date.now()
+
+
+async function handleCustomBet(interaction) {
+    const userId = interaction.user.id;
+    const balance = await getUserBalance(userId);
+    
+    const embed = new EmbedBuilder()
+        .setTitle('💰 Custom Bet Amount')
+        .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExample: `!bet 1500`')
+        .setColor('#FFD700')
+        .addFields(
+            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
+            { name: '💡 Tip', value: 'Minimum bet: 100 credits', inline: true }
+        );
+
+    const backRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('crash_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
+        );
+
+    await interaction.update({ embeds: [embed], components: [backRow] });
+    
+    // Set up message collector for custom bet
+    const filter = (message) => {
+        return message.author.id === userId && message.content.startsWith('!bet');
+    };
+    
+    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
+    
+    collector.on('collect', async (message) => {
+        const betAmount = parseInt(message.content.split(' ')[1]);
+        
+        if (isNaN(betAmount) || betAmount < 100) {
+            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
+            return;
+        }
+        
+        if (betAmount > balance) {
+            await message.reply('Insufficient balance!');
+            return;
+        }
+        
+        await message.delete().catch(() => {});
+        await message.reply(`Starting Crash game with ${formatCurrency(betAmount)}!`).then(msg => {
+            setTimeout(() => msg.delete().catch(() => {}), 3000);
+        });
+        
+        await startCrashGame(interaction, betAmount);
+    });
+    
+    collector.on('end', (collected, reason) => {
+        if (reason === 'time' && collected.size === 0) {
+            startGame(interaction);
+        }
+    });
+}
+
     };
 
     activeGames.set(userId, gameState);

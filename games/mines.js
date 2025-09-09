@@ -26,7 +26,7 @@ async function handleButton(interaction, params) {
                 break;
             case 'bet':
                 if (data[0] === 'custom') {
-                    // Handle custom bet (simplified for now)
+                    await handleCustomBet(interaction);
                     return;
                 }
                 await handleBetSelection(interaction, parseInt(data[0]));
@@ -84,6 +84,11 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_bet_5000').setLabel('5K').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_bet_10000').setLabel('10K').setStyle(ButtonStyle.Primary)
         );
+
+    const customRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
+        );
     
     const mineRow1 = new ActionRowBuilder()
         .addComponents(
@@ -92,6 +97,63 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_mines_5').setLabel('5 💣').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_10').setLabel('10 💣').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Secondary)
+
+
+async function handleCustomBet(interaction) {
+    const userId = interaction.user.id;
+    const balance = await getUserBalance(userId);
+    
+    const embed = new EmbedBuilder()
+        .setTitle('💰 Custom Bet Amount')
+        .setDescription('Enter your custom bet amount in the chat!\nFormat: `!bet [amount]`\nExample: `!bet 1500`')
+        .setColor('#FFD700')
+        .addFields(
+            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
+            { name: '💡 Tip', value: 'Minimum bet: 100 credits', inline: true }
+        );
+
+    const backRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
+        );
+
+    await interaction.update({ embeds: [embed], components: [backRow] });
+    
+    // Set up message collector for custom bet
+    const filter = (message) => {
+        return message.author.id === userId && message.content.startsWith('!bet');
+    };
+    
+    const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
+    
+    collector.on('collect', async (message) => {
+        const betAmount = parseInt(message.content.split(' ')[1]);
+        
+        if (isNaN(betAmount) || betAmount < 100) {
+            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
+            return;
+        }
+        
+        if (betAmount > balance) {
+            await message.reply('Insufficient balance!');
+            return;
+        }
+        
+        await message.delete().catch(() => {});
+        await message.reply(`Custom bet set: ${formatCurrency(betAmount)}!`).then(msg => {
+            setTimeout(() => msg.delete().catch(() => {}), 3000);
+        });
+        
+        await handleBetSelection(interaction, betAmount);
+    });
+    
+    collector.on('end', (collected, reason) => {
+        if (reason === 'time' && collected.size === 0) {
+            startGame(interaction);
+        }
+    });
+}
+
         );
     
     const mineRow2 = new ActionRowBuilder()
@@ -101,9 +163,9 @@ async function startGame(interaction) {
         );
     
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, mineRow1, mineRow2] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, mineRow1, mineRow2] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
     }
 }
 
