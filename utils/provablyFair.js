@@ -127,12 +127,21 @@ function generateSlotResults(seed) {
 function generateCrashMultiplier(seed) {
     const random = getRandomFromSeed(seed, 1, 10000, 0) / 10000;
     
-    // House edge calculation
-    const houseEdge = 0.01; // 1% house edge
-    const crashPoint = Math.floor((1 / (1 - random * (1 - houseEdge))) * 100) / 100;
+    // Improved distribution to reduce very low crashes
+    // Use exponential distribution with better parameters
+    const houseEdge = 0.02; // 2% house edge
     
-    // Clamp between 1.01x and 1000x
-    return Math.max(1.01, Math.min(1000, crashPoint));
+    // Transform random to reduce crashes below 1.5x
+    let adjustedRandom = random;
+    if (random < 0.3) {
+        // Reduce probability of very low crashes
+        adjustedRandom = 0.3 + (random / 0.3) * 0.2;
+    }
+    
+    const crashPoint = Math.floor((1 / (1 - adjustedRandom * (1 - houseEdge))) * 100) / 100;
+    
+    // Ensure minimum crash point is 1.2x instead of 1.01x
+    return Math.max(1.2, Math.min(1000, crashPoint));
 }
 
 // Calculate Mines multipliers
@@ -192,5 +201,4 @@ module.exports = {
     generateCrashMultiplier,
     calculateMinesMultiplier,
     calculateTowerMultiplier
-}ateTowerMultiplier
 };
