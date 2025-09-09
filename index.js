@@ -67,9 +67,9 @@ client.on(Events.InteractionCreate, async interaction => {
     } catch (error) {
         console.error(error);
         if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+            await interaction.followUp({ content: 'There was an error while executing this command!', flags: 64 });
         } else {
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            await interaction.reply({ content: 'There was an error while executing this command!', flags: 64 });
         }
     }
 });
@@ -109,24 +109,7 @@ client.on(Events.InteractionCreate, async interaction => {
     } catch (error) {
         console.error('Button interaction error:', error);
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'There was an error processing your request!', ephemeral: true });
-        }
-    }
-});
-
-// Handle modal submissions
-client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isModalSubmit()) return;
-    
-    try {
-        if (interaction.customId === 'withdraw_modal') {
-            const withdrawHandler = require('./utils/withdraw');
-            await withdrawHandler.handleModal(interaction);
-        }
-    } catch (error) {
-        console.error('Modal interaction error:', error);
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'There was an error processing your request!', ephemeral: true });
+            await interaction.reply({ content: 'There was an error processing your request!', flags: 64 });
         }
     }
 });
@@ -145,7 +128,7 @@ client.on(Events.InteractionCreate, async interaction => {
     } catch (error) {
         console.error('Modal submission error:', error);
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'There was an error processing your request!', ephemeral: true });
+            await interaction.reply({ content: 'There was an error processing your request!', flags: 64 });
         }
     }
 });

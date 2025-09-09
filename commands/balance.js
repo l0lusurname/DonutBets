@@ -22,7 +22,7 @@ module.exports = {
             
         } catch (error) {
             console.error('Balance command error:', error);
-            await interaction.reply({ content: 'Failed to retrieve balance.', ephemeral: true });
+            await interaction.reply({ content: 'Failed to retrieve balance.', flags: 64 });
         }
     }
 };

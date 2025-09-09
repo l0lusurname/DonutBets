@@ -53,7 +53,7 @@ async function handleButton(interaction, params) {
     } catch (error) {
         console.error('Mines button error:', error);
         if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'An error occurred!', ephemeral: true });
+            await interaction.reply({ content: 'An error occurred!', flags: 64 });
         } else if (interaction.deferred) {
             await interaction.editReply({ content: 'An error occurred!', components: [] });
         }
@@ -67,7 +67,7 @@ async function startGame(interaction) {
     if (balance < 100) {
         const reply = {
             content: 'You need at least 100 credits to play Mines!',
-            ephemeral: true
+            flags: 64
         };
         
         if (interaction.replied || interaction.deferred) {
@@ -143,7 +143,11 @@ async function handleCustomBet(interaction) {
             new ButtonBuilder().setCustomId('mines_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
         );
 
-    await interaction.update({ embeds: [embed], components: [backRow] });
+    if (interaction.replied || interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [backRow] });
+    } else {
+        await interaction.update({ embeds: [embed], components: [backRow] });
+    }
 
     const filter = (message) => {
         return message.author.id === userId && message.content.startsWith('!bet');
