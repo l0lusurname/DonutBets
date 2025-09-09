@@ -1,13 +1,12 @@
-
 const { SlashCommandBuilder } = require('discord.js');
 const minesGame = require('../games/mines');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('mines')
-        .setDescription('Play the Mines minigame'),
+        .setName('cashout')
+        .setDescription('Cash out your current mines game'),
     
     async execute(interaction) {
-        await minesGame.startGame(interaction);
+        await minesGame.cashOut(interaction);
     }
 };

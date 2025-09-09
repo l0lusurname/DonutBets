@@ -355,7 +355,16 @@ async function revealTile(interaction, tileNumber) {
 async function updateGameBoard(interaction, gameState) {
     const revealedSafeTiles = gameState.revealedTiles.size;
     const totalSafeTiles = 25 - gameState.mineCount;
-    const multiplier = Math.pow(1.1, revealedSafeTiles);
+    
+    // Better multiplier calculation based on mine count and tiles revealed
+    let baseMultiplier;
+    if (gameState.mineCount === 1) baseMultiplier = 1.05;
+    else if (gameState.mineCount <= 3) baseMultiplier = 1.12;
+    else if (gameState.mineCount <= 5) baseMultiplier = 1.18;
+    else if (gameState.mineCount <= 10) baseMultiplier = 1.25;
+    else baseMultiplier = 1.35;
+    
+    const multiplier = Math.pow(baseMultiplier, revealedSafeTiles);
     const potentialWin = Math.floor(gameState.betAmount * multiplier);
 
     const embed = new EmbedBuilder()
@@ -453,7 +462,7 @@ async function updateGameBoard(interaction, gameState) {
     rows.push(row5);
 
     // Add embed field with cashout instruction instead of button
-    embed.addFields({ name: '💰 Cash Out', value: `Type \`/mines cashout\` to cash out ${formatCurrency(potentialWin)}`, inline: false });
+    embed.addFields({ name: '💰 Cash Out', value: `Type \`/cashout\` to cash out ${formatCurrency(potentialWin)}`, inline: false });
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
@@ -502,7 +511,16 @@ async function cashOut(interaction) {
 
     gameState.gameActive = false;
     const revealedSafeTiles = gameState.revealedTiles.size;
-    const multiplier = Math.pow(1.1, revealedSafeTiles);
+    
+    // Better multiplier calculation based on mine count and tiles revealed
+    let baseMultiplier;
+    if (gameState.mineCount === 1) baseMultiplier = 1.05;
+    else if (gameState.mineCount <= 3) baseMultiplier = 1.12;
+    else if (gameState.mineCount <= 5) baseMultiplier = 1.18;
+    else if (gameState.mineCount <= 10) baseMultiplier = 1.25;
+    else baseMultiplier = 1.35;
+    
+    const multiplier = Math.pow(baseMultiplier, revealedSafeTiles);
     const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
 
@@ -541,4 +559,4 @@ async function cashOut(interaction) {
     await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
-module.exports = { handleButton, startGame };
+module.exports = { handleButton, startGame, cashOut };
