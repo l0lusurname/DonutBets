@@ -40,6 +40,13 @@ async function handleButton(interaction, params) {
             case 'difficulty':
                 await handleDifficultySelection(interaction, data[0]);
                 break;
+            case 'game':
+                const userId = interaction.user.id;
+                const gameState = activeGames.get(userId);
+                if (gameState && gameState.betAmount && gameState.difficulty) {
+                    await setupGame(interaction, gameState.betAmount, gameState.difficulty);
+                }
+                break;
             case 'tile':
                 await selectTile(interaction, parseInt(data[0]), parseInt(data[1]));
                 break;
@@ -187,6 +194,8 @@ async function handleBetSelection(interaction, betAmount) {
 
     if (gameState.difficulty) {
         await setupGame(interaction, gameState.betAmount, gameState.difficulty);
+    } else {
+        await updateSelectionDisplay(interaction, gameState);
     }
 }
 
@@ -198,7 +207,61 @@ async function handleDifficultySelection(interaction, difficulty) {
 
     if (gameState.betAmount) {
         await setupGame(interaction, gameState.betAmount, gameState.difficulty);
+    } else {
+        await updateSelectionDisplay(interaction, gameState);
     }
+}
+
+async function updateSelectionDisplay(interaction, gameState) {
+    const userId = interaction.user.id;
+    const balance = await getUserBalance(userId);
+
+    const embed = new EmbedBuilder()
+        .setTitle('🗼 Towers Game - Setup')
+        .setDescription('Choose your bet amount and difficulty!')
+        .setColor('#4B0082')
+        .addFields(
+            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
+            { name: '💰 Selected Bet', value: gameState.betAmount ? formatCurrency(gameState.betAmount) : 'Not selected', inline: true },
+            { name: '🎯 Selected Difficulty', value: gameState.difficulty ? gameState.difficulty.charAt(0).toUpperCase() + gameState.difficulty.slice(1) : 'Not selected', inline: true }
+        );
+
+    if (gameState.betAmount && gameState.difficulty) {
+        embed.addFields({ name: '🎮 Ready!', value: 'Click "Start Game" to begin!', inline: false });
+    }
+
+    const betRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('towers_bet_100').setLabel('100').setStyle(gameState.betAmount === 100 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('towers_bet_500').setLabel('500').setStyle(gameState.betAmount === 500 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('towers_bet_1000').setLabel('1K').setStyle(gameState.betAmount === 1000 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('towers_bet_5000').setLabel('5K').setStyle(gameState.betAmount === 5000 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('towers_bet_10000').setLabel('10K').setStyle(gameState.betAmount === 10000 ? ButtonStyle.Success : ButtonStyle.Primary)
+        );
+
+    const customRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('towers_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
+        );
+
+    const difficultyRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy').setStyle(gameState.difficulty === 'easy' ? ButtonStyle.Success : ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium').setStyle(gameState.difficulty === 'medium' ? ButtonStyle.Success : ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard').setStyle(gameState.difficulty === 'hard' ? ButtonStyle.Success : ButtonStyle.Danger)
+        );
+
+    const components = [betRow, customRow, difficultyRow];
+    
+    if (gameState.betAmount && gameState.difficulty) {
+        const startRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder().setCustomId('towers_game').setLabel('🎮 Start Game!').setStyle(ButtonStyle.Primary)
+            );
+        components.push(startRow);
+    }
+
+    await interaction.editReply({ embeds: [embed], components });
 }
 
 async function setupGame(interaction, betAmount, difficulty) {

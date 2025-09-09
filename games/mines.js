@@ -461,8 +461,16 @@ async function updateGameBoard(interaction, gameState) {
     );
     rows.push(row5);
 
-    // Add embed field with cashout instruction instead of button
-    embed.addFields({ name: '💰 Cash Out', value: `Type \`/cashout\` to cash out ${formatCurrency(potentialWin)}`, inline: false });
+    // Add cashout button in a separate row
+    const cashoutRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_cashout')
+                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                .setStyle(ButtonStyle.Success)
+        );
+    
+    rows.push(cashoutRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
