@@ -237,9 +237,23 @@ async function updateTowersBoard(interaction, gameState) {
     const multiplier = Math.pow(1.5, gameState.currentLevel);
     const potentialWin = Math.floor(gameState.betAmount * multiplier);
 
+    // Build visual representation of completed levels
+    let completedLevels = '';
+    for (let level = gameState.currentLevel - 1; level >= Math.max(0, gameState.currentLevel - 5); level--) {
+        let levelStr = `Level ${level + 1}: `;
+        for (let block = 0; block < gameState.blocksPerLevel; block++) {
+            if (block === gameState.correctPath[level]) {
+                levelStr += '✅ ';
+            } else {
+                levelStr += '❌ ';
+            }
+        }
+        completedLevels += levelStr + '\n';
+    }
+
     const embed = new EmbedBuilder()
         .setTitle('🗼 Towers Game')
-        .setDescription(`Level ${gameState.currentLevel + 1}/8`)
+        .setDescription(`**Level ${gameState.currentLevel + 1}/8**\n${completedLevels || 'Start climbing!'}`)
         .setColor('#4B0082')
         .addFields(
             { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
@@ -249,44 +263,29 @@ async function updateTowersBoard(interaction, gameState) {
         );
 
     const rows = [];
-    for (let level = 7; level >= 0; level--) {
-        const row = new ActionRowBuilder();
+    
+    // Current level tiles
+    if (gameState.currentLevel < 8) {
+        const currentLevelRow = new ActionRowBuilder();
         for (let block = 0; block < gameState.blocksPerLevel; block++) {
-            let style = ButtonStyle.Secondary;
-            let disabled = false;
-            let label = '?';
-
-            if (level < gameState.currentLevel) {
-                if (block === gameState.correctPath[level]) {
-                    style = ButtonStyle.Success;
-                    label = '✅';
-                } else {
-                    style = ButtonStyle.Danger;
-                    label = '❌';
-                }
-                disabled = true;
-            } else if (level > gameState.currentLevel) {
-                disabled = true;
-            }
-
-            row.addComponents(
+            currentLevelRow.addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`towers_tile_${level}_${block}`)
-                    .setLabel(label)
-                    .setStyle(style)
-                    .setDisabled(disabled)
+                    .setCustomId(`towers_tile_${gameState.currentLevel}_${block}`)
+                    .setLabel(`Block ${block + 1}`)
+                    .setStyle(ButtonStyle.Primary)
             );
         }
-        rows.push(row);
+        rows.push(currentLevelRow);
     }
 
+    // Cashout button if player has progressed
     if (gameState.currentLevel > 0) {
         const cashoutRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('towers_cashout')
                     .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                    .setStyle(ButtonStyle.Primary)
+                    .setStyle(ButtonStyle.Success)
             );
         rows.push(cashoutRow);
     }

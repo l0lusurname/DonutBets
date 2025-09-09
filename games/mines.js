@@ -40,6 +40,13 @@ async function handleButton(interaction, params) {
             case 'mines':
                 await handleMineSelection(interaction, parseInt(data[0]));
                 break;
+            case 'game':
+                const userId = interaction.user.id;
+                const gameState = activeGames.get(userId);
+                if (gameState && gameState.betAmount && gameState.mineCount) {
+                    await setupGame(interaction, gameState.betAmount, gameState.mineCount);
+                }
+                break;
             case 'tile':
                 await revealTile(interaction, parseInt(data[0]));
                 break;
@@ -195,6 +202,8 @@ async function handleBetSelection(interaction, betAmount) {
 
     if (gameState.mineCount) {
         await setupGame(interaction, gameState.betAmount, gameState.mineCount);
+    } else {
+        await updateSelectionDisplay(interaction, gameState);
     }
 }
 
@@ -206,7 +215,69 @@ async function handleMineSelection(interaction, mineCount) {
 
     if (gameState.betAmount) {
         await setupGame(interaction, gameState.betAmount, gameState.mineCount);
+    } else {
+        await updateSelectionDisplay(interaction, gameState);
     }
+}
+
+async function updateSelectionDisplay(interaction, gameState) {
+    const userId = interaction.user.id;
+    const balance = await getUserBalance(userId);
+
+    const embed = new EmbedBuilder()
+        .setTitle('💣 Mines Game - Setup')
+        .setDescription('Select your bet amount and number of mines!')
+        .setColor('#FF4500')
+        .addFields(
+            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
+            { name: '💰 Selected Bet', value: gameState.betAmount ? formatCurrency(gameState.betAmount) : 'Not selected', inline: true },
+            { name: '💣 Selected Mines', value: gameState.mineCount ? `${gameState.mineCount} mines` : 'Not selected', inline: true }
+        );
+
+    if (gameState.betAmount && gameState.mineCount) {
+        embed.addFields({ name: '🎮 Ready!', value: 'Click "Start Game" to begin!', inline: false });
+    }
+
+    const betRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_bet_100').setLabel('100').setStyle(gameState.betAmount === 100 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_bet_500').setLabel('500').setStyle(gameState.betAmount === 500 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_bet_1000').setLabel('1K').setStyle(gameState.betAmount === 1000 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_bet_5000').setLabel('5K').setStyle(gameState.betAmount === 5000 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_bet_10000').setLabel('10K').setStyle(gameState.betAmount === 10000 ? ButtonStyle.Success : ButtonStyle.Primary)
+        );
+
+    const customRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
+        );
+
+    const mineRow1 = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_mines_1').setLabel('1 💣').setStyle(gameState.mineCount === 1 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_mines_3').setLabel('3 💣').setStyle(gameState.mineCount === 3 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_mines_5').setLabel('5 💣').setStyle(gameState.mineCount === 5 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_mines_10').setLabel('10 💣').setStyle(gameState.mineCount === 10 ? ButtonStyle.Success : ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(gameState.mineCount === 15 ? ButtonStyle.Success : ButtonStyle.Secondary)
+        );
+
+    const mineRow2 = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_mines_20').setLabel('20 💣').setStyle(gameState.mineCount === 20 ? ButtonStyle.Success : ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(gameState.mineCount === 24 ? ButtonStyle.Success : ButtonStyle.Danger)
+        );
+
+    // Add start game button if both selections are made
+    const components = [betRow, customRow, mineRow1, mineRow2];
+    if (gameState.betAmount && gameState.mineCount) {
+        const startRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder().setCustomId('mines_game').setLabel('🎮 Start Game!').setStyle(ButtonStyle.Primary)
+            );
+        components.push(startRow);
+    }
+
+    await interaction.editReply({ embeds: [embed], components });
 }
 
 async function setupGame(interaction, betAmount, mineCount) {
