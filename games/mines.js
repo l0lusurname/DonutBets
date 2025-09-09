@@ -24,6 +24,12 @@ async function handleButton(interaction, params) {
             case 'start':
                 await startGame(interaction);
                 break;
+            case 'bet':
+                await handleSetup(interaction);
+                break;
+            case 'mines':
+                await handleSetup(interaction);
+                break;
             case 'play':
                 await playTile(interaction, parseInt(data[0]));
                 break;
