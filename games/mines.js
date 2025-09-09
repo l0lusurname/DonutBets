@@ -451,15 +451,24 @@ async function updateGameBoard(interaction, gameState) {
     }
     rows.push(row5);
 
-    // Add cashout button in separate row
-    const cashoutRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
+    // Add cashout button to the last row instead of separate row to avoid Discord's 5-row limit
+    if (rows.length > 0) {
+        const lastRow = rows[rows.length - 1];
+        if (lastRow.components.length < 5) {
+            lastRow.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('mines_cashout')
+                    .setLabel(`💰 ${formatCurrency(potentialWin)}`)
+                    .setStyle(ButtonStyle.Success)
+            );
+        } else {
+            // If last row is full, replace one tile button with cashout
+            lastRow.components[4] = new ButtonBuilder()
                 .setCustomId('mines_cashout')
-                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                .setStyle(ButtonStyle.Success)
-        );
-    rows.push(cashoutRow);
+                .setLabel(`💰 ${formatCurrency(potentialWin)}`)
+                .setStyle(ButtonStyle.Success);
+        }
+    }
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }

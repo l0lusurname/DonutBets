@@ -1,4 +1,3 @@
-
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
 const { generateSeed, generateTowersResults } = require('../utils/provablyFair');
@@ -7,14 +6,14 @@ const activeGames = new Map();
 
 function parseFormattedNumber(input) {
     if (typeof input === 'number') return input;
-    
+
     const str = input.toString().toLowerCase().replace(/,/g, '');
     const num = parseFloat(str);
-    
+
     if (str.includes('k')) return Math.floor(num * 1000);
     if (str.includes('m')) return Math.floor(num * 1000000);
     if (str.includes('b')) return Math.floor(num * 1000000000);
-    
+
     return Math.floor(num);
 }
 
@@ -76,7 +75,7 @@ async function startGame(interaction) {
             content: 'You need at least 100 credits to play Towers!',
             flags: 64
         };
-        
+
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(reply);
         } else {
@@ -252,7 +251,7 @@ async function updateSelectionDisplay(interaction, gameState) {
         );
 
     const components = [betRow, customRow, difficultyRow];
-    
+
     if (gameState.betAmount && gameState.difficulty) {
         const startRow = new ActionRowBuilder()
             .addComponents(
@@ -276,13 +275,13 @@ async function setupGame(interaction, betAmount, difficulty) {
     let blocksPerLevel;
     switch (difficulty) {
         case 'easy': blocksPerLevel = 4; break;
-        case 'medium': blocksPerLevel = 3; break; 
+        case 'medium': blocksPerLevel = 3; break;
         case 'hard': blocksPerLevel = 2; break;
         default: blocksPerLevel = 3;
     }
 
-    const seed = generateSeed();
-    const correctPath = generateTowersResults(seed, 8, blocksPerLevel);
+    const uniqueSeed = generateSeed();
+    const correctPath = generateTowersResults(uniqueSeed, 8, blocksPerLevel);
 
     const gameState = {
         userId,
@@ -292,7 +291,7 @@ async function setupGame(interaction, betAmount, difficulty) {
         correctPath,
         currentLevel: 0,
         gameActive: true,
-        seed
+        seed: uniqueSeed
     };
 
     activeGames.set(userId, gameState);
@@ -330,7 +329,7 @@ async function updateTowersBoard(interaction, gameState) {
         );
 
     const rows = [];
-    
+
     // Current level tiles
     if (gameState.currentLevel < 8) {
         const currentLevelRow = new ActionRowBuilder();

@@ -4,13 +4,13 @@ const crypto = require('crypto');
 function generateSeed() {
     const serverSeed = crypto.randomBytes(32).toString('hex');
     const clientSeed = crypto.randomBytes(16).toString('hex');
-    const nonce = Date.now();
+    const nonce = Date.now() + Math.random();
     
     return {
         serverSeed,
         clientSeed,
         nonce,
-        hash: crypto.createHash('sha256').update(serverSeed + clientSeed + nonce).digest('hex')
+        hash: crypto.createHash('sha256').update(serverSeed + clientSeed + nonce.toString()).digest('hex')
     };
 }
 
@@ -59,7 +59,9 @@ function generateTowersResults(seed, levels, blocksPerLevel) {
     const correctPath = [];
     
     for (let level = 0; level < levels; level++) {
-        const correctBlock = getRandomFromSeed(seed, 0, blocksPerLevel - 1, level + 200);
+        // Use unique offsets and include level multiplier for better randomization
+        const offset = level * 1000 + Math.floor(Date.now() / 1000) % 1000;
+        const correctBlock = getRandomFromSeed(seed, 0, blocksPerLevel - 1, offset);
         correctPath.push(correctBlock);
     }
     
