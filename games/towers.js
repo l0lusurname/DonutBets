@@ -1,4 +1,3 @@
-
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
 const { generateSeed, generateTowerMines, calculateTowerMultiplier } = require('../utils/provablyFair');
@@ -8,20 +7,29 @@ const activeGames = new Map();
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
-    
+
     try {
+        // Always defer the interaction first to prevent timeout
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferUpdate();
+        }
+
         switch (action) {
             case 'start':
                 await startGame(interaction);
                 break;
             case 'bet':
+                if (data[0] === 'custom') {
+                    await handleCustomBet(interaction);
+                    return;
+                }
                 await handleBetSelection(interaction, parseInt(data[0]));
                 break;
             case 'difficulty':
                 await handleDifficultySelection(interaction, data[0]);
                 break;
             case 'climb':
-                await climbTower(interaction, parseInt(data[0]), parseInt(data[1])); // level, slot
+                await climbTower(interaction, parseInt(data[0]), parseInt(data[1]));
                 break;
             case 'cashout':
                 await cashOut(interaction);
@@ -34,6 +42,8 @@ async function handleButton(interaction, params) {
         console.error('Towers button error:', error);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: 'An error occurred!', ephemeral: true });
+        } else if (interaction.deferred) {
+            await interaction.editReply({ content: 'An error occurred!', components: [] });
         }
     }
 }
@@ -41,7 +51,7 @@ async function handleButton(interaction, params) {
 async function startGame(interaction) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
-    
+
     if (balance < 100) {
         await interaction.reply({ 
             content: 'You need at least 100 credits to play Towers!', 
@@ -49,10 +59,10 @@ async function startGame(interaction) {
         });
         return;
     }
-    
+
     // Clear any existing game state
     activeGames.delete(userId);
-    
+
     const embed = new EmbedBuilder()
         .setTitle('🗼 Towers Game')
         .setDescription('Choose your bet amount and difficulty!')
@@ -61,7 +71,7 @@ async function startGame(interaction) {
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
             { name: '🎯 Difficulty', value: 'Choose wisely!', inline: true }
         );
-    
+
     const betRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder().setCustomId('towers_bet_100').setLabel('100').setStyle(ButtonStyle.Secondary),
@@ -70,14 +80,14 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('towers_bet_5000').setLabel('5K').setStyle(ButtonStyle.Secondary),
             new ButtonBuilder().setCustomId('towers_bet_10000').setLabel('10K').setStyle(ButtonStyle.Primary)
         );
-    
+
     const difficultyRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('Easy (4 slots, 1 mine)').setStyle(ButtonStyle.Success),
             new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('Medium (3 slots, 1 mine)').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('Hard (3 slots, 2 mines)').setStyle(ButtonStyle.Danger)
         );
-    
+
     if (interaction.replied || interaction.deferred) {
         await interaction.editReply({ embeds: [embed], components: [betRow, difficultyRow] });
     } else {
@@ -90,7 +100,7 @@ async function handleBetSelection(interaction, betAmount) {
     let gameState = activeGames.get(userId) || {};
     gameState.betAmount = betAmount;
     activeGames.set(userId, gameState);
-    
+
     if (gameState.difficulty) {
         await setupGame(interaction, gameState.betAmount, gameState.difficulty);
     }
@@ -101,7 +111,7 @@ async function handleDifficultySelection(interaction, difficulty) {
     let gameState = activeGames.get(userId) || {};
     gameState.difficulty = difficulty;
     activeGames.set(userId, gameState);
-    
+
     if (gameState.betAmount) {
         await setupGame(interaction, gameState.betAmount, gameState.difficulty);
     }
@@ -110,16 +120,16 @@ async function handleDifficultySelection(interaction, difficulty) {
 async function setupGame(interaction, betAmount, difficulty) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
-    
+
     if (balance < betAmount) {
         await interaction.editReply({ content: 'Insufficient balance!', components: [] });
         return;
     }
-    
+
     // Generate seed and mine positions for each level
     const seed = generateSeed();
     const minePositions = generateTowerMines(seed, difficulty);
-    
+
     const gameState = {
         userId,
         betAmount,
@@ -130,12 +140,12 @@ async function setupGame(interaction, betAmount, difficulty) {
         gameActive: true,
         multiplier: 1
     };
-    
+
     activeGames.set(userId, gameState);
-    
+
     // Deduct bet from balance
     await updateUserBalance(userId, balance - betAmount);
-    
+
     // Show first level
     await showCurrentLevel(interaction, gameState);
 }
@@ -146,10 +156,10 @@ async function showCurrentLevel(interaction, gameState) {
         medium: { slots: 3, mines: 1, color: '#FFA500' },
         hard: { slots: 3, mines: 2, color: '#FF0000' }
     };
-    
+
     const info = difficultyInfo[gameState.difficulty];
     const currentMultiplier = calculateTowerMultiplier(gameState.difficulty, gameState.currentLevel);
-    
+
     const embed = new EmbedBuilder()
         .setTitle(`🗼 Towers - Level ${gameState.currentLevel + 1}/8`)
         .setDescription(`Difficulty: ${gameState.difficulty.toUpperCase()} | Multiplier: ${currentMultiplier}x`)
@@ -159,9 +169,9 @@ async function showCurrentLevel(interaction, gameState) {
             { name: '🎯 Current Level', value: `${gameState.currentLevel + 1}/8`, inline: true },
             { name: '📈 Potential Win', value: formatCurrency(Math.floor(gameState.betAmount * currentMultiplier)), inline: true }
         );
-    
+
     const components = [];
-    
+
     if (gameState.gameActive && gameState.currentLevel < 8) {
         // Create buttons for current level
         const levelRow = new ActionRowBuilder();
@@ -174,7 +184,7 @@ async function showCurrentLevel(interaction, gameState) {
             );
         }
         components.push(levelRow);
-        
+
         // Add cash out button if not on first level
         if (gameState.currentLevel > 0) {
             const controlRow = new ActionRowBuilder()
@@ -187,7 +197,7 @@ async function showCurrentLevel(interaction, gameState) {
             components.push(controlRow);
         }
     }
-    
+
     if (!gameState.gameActive) {
         const newGameRow = new ActionRowBuilder()
             .addComponents(
@@ -198,7 +208,7 @@ async function showCurrentLevel(interaction, gameState) {
             );
         components.push(newGameRow);
     }
-    
+
     if (interaction.replied || interaction.deferred) {
         await interaction.editReply({ embeds: [embed], components });
     } else {
@@ -209,18 +219,18 @@ async function showCurrentLevel(interaction, gameState) {
 async function climbTower(interaction, level, slot) {
     const userId = interaction.user.id;
     const gameState = activeGames.get(userId);
-    
+
     if (!gameState || !gameState.gameActive || gameState.currentLevel !== level) {
         await interaction.reply({ content: 'Invalid game state!', ephemeral: true });
         return;
     }
-    
+
     const levelMines = gameState.minePositions[level];
-    
+
     if (levelMines.includes(slot)) {
         // Hit mine - game over
         gameState.gameActive = false;
-        
+
         const embed = new EmbedBuilder()
             .setTitle('💥 You Fell!')
             .setDescription(`You hit a mine on level ${level + 1}! Lost ${formatCurrency(gameState.betAmount)}`)
@@ -229,7 +239,7 @@ async function climbTower(interaction, level, slot) {
                 { name: '💸 Result', value: `Lost ${formatCurrency(gameState.betAmount)}`, inline: true },
                 { name: '📊 Level Reached', value: `${level + 1}/8`, inline: true }
             );
-        
+
         await logGame(
             userId, 
             'Towers', 
@@ -239,7 +249,7 @@ async function climbTower(interaction, level, slot) {
             -gameState.betAmount, 
             gameState.seed.hash
         );
-        
+
         const newGameRow = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -247,23 +257,23 @@ async function climbTower(interaction, level, slot) {
                     .setLabel('🎮 New Game')
                     .setStyle(ButtonStyle.Primary)
             );
-        
+
         await interaction.update({ embeds: [embed], components: [newGameRow] });
-        
+
     } else {
         // Safe slot - advance to next level
         gameState.currentLevel++;
-        
+
         if (gameState.currentLevel >= 8) {
             // Completed all levels!
             gameState.gameActive = false;
             const finalMultiplier = calculateTowerMultiplier(gameState.difficulty, 7);
             const winAmount = Math.floor(gameState.betAmount * finalMultiplier);
             const profit = winAmount - gameState.betAmount;
-            
+
             const currentBalance = await getUserBalance(userId);
             await updateUserBalance(userId, currentBalance + winAmount);
-            
+
             const embed = new EmbedBuilder()
                 .setTitle('🎉 Tower Completed!')
                 .setDescription(`You climbed all 8 levels! Amazing! +${formatCurrency(profit)}`)
@@ -272,7 +282,7 @@ async function climbTower(interaction, level, slot) {
                     { name: '🏆 Final Multiplier', value: `${finalMultiplier}x`, inline: true },
                     { name: '💰 Total Win', value: formatCurrency(profit), inline: true }
                 );
-            
+
             await logGame(
                 userId, 
                 'Towers', 
@@ -282,7 +292,7 @@ async function climbTower(interaction, level, slot) {
                 profit, 
                 gameState.seed.hash
             );
-            
+
             const newGameRow = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
@@ -290,9 +300,9 @@ async function climbTower(interaction, level, slot) {
                         .setLabel('🎮 New Game')
                         .setStyle(ButtonStyle.Primary)
                 );
-            
+
             await interaction.update({ embeds: [embed], components: [newGameRow] });
-            
+
         } else {
             // Continue to next level
             await showCurrentLevel(interaction, gameState);
@@ -303,20 +313,20 @@ async function climbTower(interaction, level, slot) {
 async function cashOut(interaction) {
     const userId = interaction.user.id;
     const gameState = activeGames.get(userId);
-    
+
     if (!gameState || !gameState.gameActive || gameState.currentLevel === 0) {
         await interaction.reply({ content: 'Cannot cash out at this time!', ephemeral: true });
         return;
     }
-    
+
     gameState.gameActive = false;
     const multiplier = calculateTowerMultiplier(gameState.difficulty, gameState.currentLevel - 1);
     const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
-    
+
     const currentBalance = await getUserBalance(userId);
     await updateUserBalance(userId, currentBalance + winAmount);
-    
+
     const embed = new EmbedBuilder()
         .setTitle('💰 Cashed Out!')
         .setDescription(`You climbed to level ${gameState.currentLevel} and cashed out! +${formatCurrency(profit)}`)
@@ -326,7 +336,7 @@ async function cashOut(interaction) {
             { name: '📈 Multiplier', value: `${multiplier}x`, inline: true },
             { name: '💰 Profit', value: formatCurrency(profit), inline: true }
         );
-    
+
     await logGame(
         userId, 
         'Towers', 
@@ -336,7 +346,7 @@ async function cashOut(interaction) {
         profit, 
         gameState.seed.hash
     );
-    
+
     const newGameRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
@@ -344,9 +354,17 @@ async function cashOut(interaction) {
                 .setLabel('🎮 New Game')
                 .setStyle(ButtonStyle.Primary)
         );
-    
+
     await interaction.update({ embeds: [embed], components: [newGameRow] });
 }
+
+// Placeholder for handleCustomBet if it's needed in the future
+async function handleCustomBet(interaction) {
+    // Implementation for custom bet input would go here
+    // For now, we can just reply that it's not implemented
+    await interaction.reply({ content: 'Custom bet feature is not yet implemented!', ephemeral: true });
+}
+
 
 module.exports = {
     handleButton

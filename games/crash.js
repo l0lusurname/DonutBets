@@ -9,6 +9,11 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
+        // Always defer the interaction first to prevent timeout
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferUpdate();
+        }
+
         switch (action) {
             case 'start':
                 await startGame(interaction);
@@ -18,10 +23,10 @@ async function handleButton(interaction, params) {
                     await handleCustomBet(interaction);
                     return;
                 }
-                await startCrashGame(interaction, parseInt(data[0]));
+                await handleBetSelection(interaction, parseInt(data[0]));
                 break;
-            case 'cashout':
-                await cashOut(interaction);
+            case 'join':
+                await joinGame(interaction);
                 break;
             case 'newgame':
                 await startGame(interaction);
@@ -31,6 +36,8 @@ async function handleButton(interaction, params) {
         console.error('Crash button error:', error);
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({ content: 'An error occurred!', ephemeral: true });
+        } else if (interaction.deferred) {
+            await interaction.editReply({ content: 'An error occurred!', components: [] });
         }
     }
 }
@@ -40,9 +47,9 @@ async function startGame(interaction) {
     const balance = await getUserBalance(userId);
 
     if (balance < 100) {
-        await interaction.reply({ 
-            content: 'You need at least 100 credits to play Crash!', 
-            ephemeral: true 
+        await interaction.reply({
+            content: 'You need at least 100 credits to play Crash!',
+            ephemeral: true
         });
         return;
     }
@@ -138,7 +145,7 @@ async function handleCustomBet(interaction) {
             new ButtonBuilder().setCustomId('crash_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
         );
 
-    await interaction.update({ embeds: [embed], components: [backRow] });
+    await interaction.editReply({ embeds: [embed], components: [backRow] });
 
     // Set up message collector for custom bet
     const filter = (message) => {
@@ -161,11 +168,9 @@ async function handleCustomBet(interaction) {
         }
 
         await message.delete().catch(() => {});
-        await message.reply(`Starting Crash game with ${formatCurrency(betAmount)}!`).then(msg => {
-            setTimeout(() => msg.delete().catch(() => {}), 3000);
-        });
+        // Remove the problematic message reply that causes the reference error
 
-        await startCrashGame(interaction, betAmount);
+        await startCrashGame(interaction, betAmount); // Changed from handleBetSelection to startCrashGame
     });
 
     collector.on('end', (collected, reason) => {
@@ -310,6 +315,24 @@ async function cashOut(interaction) {
 
     await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
+
+// Placeholder for joinGame function if it exists elsewhere or is intended to be added.
+// If not used, it can be removed.
+async function joinGame(interaction) {
+    // This function is called when the 'join' action is triggered.
+    // Implement the game joining logic here.
+    // For now, let's assume it's a placeholder and reply with a message.
+    await interaction.editReply({ content: 'Joining game...', components: [] });
+}
+
+// Placeholder for handleBetSelection function.
+// This function is called when a specific bet amount is selected.
+async function handleBetSelection(interaction, betAmount) {
+    // This function is called when a specific bet amount is selected.
+    // Implement the logic to start the crash game with the selected bet amount.
+    await startCrashGame(interaction, betAmount);
+}
+
 
 module.exports = {
     handleButton

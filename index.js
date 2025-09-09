@@ -61,6 +61,8 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     try {
+        // Ensure user exists in database before processing command
+        await ensureUserExists(interaction.user.id);
         await command.execute(interaction);
     } catch (error) {
         console.error(error);
@@ -79,6 +81,9 @@ client.on(Events.InteractionCreate, async interaction => {
     const [game, action, ...params] = interaction.customId.split('_');
     
     try {
+        // Ensure user exists in database before processing
+        await ensureUserExists(interaction.user.id);
+        
         switch (game) {
             case 'mines':
                 const minesHandler = require('./games/mines');
