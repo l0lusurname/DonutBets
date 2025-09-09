@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
 const { generateSeed, generateTowersResults } = require('../utils/provablyFair');
+const crypto = require('crypto');
 
 const activeGames = new Map();
 
@@ -280,7 +281,12 @@ async function setupGame(interaction, betAmount, difficulty) {
         default: blocksPerLevel = 3;
     }
 
+    // Generate a truly unique seed for each game
     const uniqueSeed = generateSeed();
+    // Add extra randomness to make each game unique
+    uniqueSeed.nonce = uniqueSeed.nonce + Math.random() * 1000000 + Date.now();
+    uniqueSeed.hash = crypto.createHash('sha256').update(uniqueSeed.serverSeed + uniqueSeed.clientSeed + uniqueSeed.nonce.toString()).digest('hex');
+    
     const correctPath = generateTowersResults(uniqueSeed, 8, blocksPerLevel);
 
     const gameState = {

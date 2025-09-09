@@ -59,8 +59,8 @@ function generateTowersResults(seed, levels, blocksPerLevel) {
     const correctPath = [];
     
     for (let level = 0; level < levels; level++) {
-        // Use unique offsets and include level multiplier for better randomization
-        const offset = level * 1000 + Math.floor(Date.now() / 1000) % 1000;
+        // Use unique offsets with more randomization
+        const offset = level * 1337 + Math.floor(Math.random() * 10000) + Date.now() % 10000;
         const correctBlock = getRandomFromSeed(seed, 0, blocksPerLevel - 1, offset);
         correctPath.push(correctBlock);
     }
