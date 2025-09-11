@@ -20,7 +20,7 @@ async function ensureUserExists(userId, username) {
                 .insert({
                     id: userId,
                     username: username,
-                    balance: 10000, // Starting balance: 10K
+                    balance: 0, // Starting balance: 0
                     created_at: new Date()
                 })
                 .select()
