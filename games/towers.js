@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout, updateCasinoBankBalance } = require('../utils/database');
 const { generateSeed, generateTowersResults } = require('../utils/provablyFair');
 const crypto = require('crypto');
 
@@ -273,6 +273,30 @@ async function setupGame(interaction, betAmount, difficulty) {
         return;
     }
 
+    // Safety check: validate bet amount against max bet limit
+    const maxBet = await getMaxBetAmount();
+    if (betAmount > maxBet) {
+        await interaction.editReply({ 
+            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
+            components: [] 
+        });
+        return;
+    }
+
+    // Safety check: validate potential max payout for this tower configuration
+    const { calculateTowerMultiplier } = require('../utils/provablyFair');
+    const maxFloors = 8; // Maximum floors in towers game
+    const maxMultiplier = await calculateTowerMultiplier(difficulty, maxFloors - 1);
+    
+    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
+    if (!validation.isValid) {
+        await interaction.editReply({ 
+            content: `❌ ${validation.reasons.join(', ')}`, 
+            components: [] 
+        });
+        return;
+    }
+
     let blocksPerLevel;
     switch (difficulty) {
         case 'easy': blocksPerLevel = 4; break;
@@ -392,12 +416,16 @@ async function selectTile(interaction, level, block) {
 
 async function winGame(interaction, gameState) {
     gameState.gameActive = false;
-    const multiplier = Math.pow(1.5, 8);
+    const { calculateTowerMultiplier } = require('../utils/provablyFair');
+    const multiplier = await calculateTowerMultiplier(gameState.difficulty, 7); // Level 7 = completed 8th floor
     const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
 
     const currentBalance = await getUserBalance(gameState.userId);
     await updateUserBalance(gameState.userId, currentBalance + winAmount);
+    
+    // Update casino bank balance (opposite of user's profit/loss)
+    await updateCasinoBankBalance(-profit);
 
     const embed = new EmbedBuilder()
         .setTitle('🏆 Victory!')
@@ -520,12 +548,16 @@ async function cashOut(interaction) {
     }
 
     gameState.gameActive = false;
-    const multiplier = Math.pow(1.5, gameState.currentLevel);
+    const { calculateTowerMultiplier } = require('../utils/provablyFair');
+    const multiplier = await calculateTowerMultiplier(gameState.difficulty, gameState.currentLevel - 1);
     const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
 
     const currentBalance = await getUserBalance(userId);
     await updateUserBalance(userId, currentBalance + winAmount);
+    
+    // Update casino bank balance (opposite of user's profit/loss)
+    await updateCasinoBankBalance(-profit);
 
     const embed = new EmbedBuilder()
         .setTitle('💰 Cashed Out!')

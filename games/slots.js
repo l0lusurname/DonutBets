@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout, updateCasinoBankBalance } = require('../utils/database');
 const { generateSeed, generateSlotResults } = require('../utils/provablyFair');
 
 function parseFormattedNumber(input) {
@@ -178,6 +178,27 @@ async function playSlots(interaction, betAmount) {
         await interaction.editReply({ content: 'Insufficient balance!', components: [] });
         return;
     }
+
+    // Safety check: validate bet amount against max bet limit
+    const maxBet = await getMaxBetAmount();
+    if (betAmount > maxBet) {
+        await interaction.editReply({ 
+            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
+            components: [] 
+        });
+        return;
+    }
+
+    // Safety check: validate potential max payout for slots
+    const maxMultiplier = 5; // Max slots multiplier is 5x (center 7 jackpot)
+    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
+    if (!validation.isValid) {
+        await interaction.editReply({ 
+            content: `❌ ${validation.reasons.join(', ')}`, 
+            components: [] 
+        });
+        return;
+    }
     
     const seed = generateSeed();
     const results = generateSlotResults(seed);
@@ -205,6 +226,10 @@ async function playSlots(interaction, betAmount) {
     const profit = winAmount - betAmount;
     
     await updateUserBalance(userId, balance - betAmount + winAmount);
+    
+    // Update casino bank balance (opposite of user's profit/loss)
+    await updateCasinoBankBalance(-profit);
+    
     await logGame(userId, 'Slots', betAmount, multiplier > 0 ? 'Win' : 'Loss', multiplier, profit, seed.hash);
     
     let winDescription = '';

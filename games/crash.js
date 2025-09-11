@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout, updateCasinoBankBalance } = require('../utils/database');
 const { generateSeed, generateCrashMultiplier } = require('../utils/provablyFair');
 
 const activeGames = new Map();
@@ -174,6 +174,27 @@ async function startCrashGame(interaction, betAmount) {
         return;
     }
 
+    // Safety check: validate bet amount against max bet limit
+    const maxBet = await getMaxBetAmount();
+    if (betAmount > maxBet) {
+        await interaction.editReply({ 
+            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
+            components: [] 
+        });
+        return;
+    }
+
+    // Safety check: validate potential max payout for crash game
+    const maxMultiplier = 10; // Max crash multiplier is 10x
+    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
+    if (!validation.isValid) {
+        await interaction.editReply({ 
+            content: `❌ ${validation.reasons.join(', ')}`, 
+            components: [] 
+        });
+        return;
+    }
+
     const seed = generateSeed();
     const crashPoint = generateCrashMultiplier(seed);
 
@@ -281,6 +302,9 @@ async function endCrashGame(interaction, gameState, crashed) {
                 { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
             );
 
+        // Update casino bank balance (casino gains the bet amount on user loss)
+        await updateCasinoBankBalance(gameState.betAmount);
+        
         await logGame(userId, 'Crash', gameState.betAmount, 'Loss', 0, -gameState.betAmount, gameState.seed.hash);
 
         const newGameRow = new ActionRowBuilder()
@@ -298,6 +322,9 @@ async function endCrashGame(interaction, gameState, crashed) {
         const currentBalance = await getUserBalance(userId);
 
         await updateUserBalance(userId, currentBalance + winAmount);
+        
+        // Update casino bank balance (opposite of user's profit/loss)
+        await updateCasinoBankBalance(-profit);
 
         const embed = new EmbedBuilder()
             .setTitle('💰 CASHED OUT!')

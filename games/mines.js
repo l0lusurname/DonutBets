@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout, updateCasinoBankBalance } = require('../utils/database');
 const { generateSeed, generateMinesResults } = require('../utils/provablyFair');
 
 const activeGames = new Map();
@@ -488,6 +488,9 @@ async function gameOver(interaction, gameState, hitMine) {
         );
     rows.push(newGameRow);
 
+    // Update casino bank balance (casino gains the bet amount on user loss)
+    await updateCasinoBankBalance(gameState.betAmount);
+    
     await logGame(
         gameState.userId,
         'Mines',
@@ -527,6 +530,9 @@ async function cashOut(interaction) {
 
     const currentBalance = await getUserBalance(userId);
     await updateUserBalance(userId, currentBalance + winAmount);
+    
+    // Update casino bank balance (opposite of user's profit/loss)
+    await updateCasinoBankBalance(-profit);
 
     const embed = new EmbedBuilder()
         .setTitle('💰 Cashed Out!')
