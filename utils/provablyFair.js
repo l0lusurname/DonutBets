@@ -4,7 +4,7 @@ const crypto = require('crypto');
 function generateSeed() {
     const serverSeed = crypto.randomBytes(32).toString('hex');
     const clientSeed = crypto.randomBytes(16).toString('hex');
-    const nonce = (Date.now() + Math.random()).toString();
+    const nonce = Date.now().toString();
     
     return {
         serverSeed,
@@ -59,8 +59,8 @@ function generateTowersResults(seed, levels, blocksPerLevel) {
     const correctPath = [];
     
     for (let level = 0; level < levels; level++) {
-        // Use unique offsets with more randomization
-        const offset = level * 1337 + Math.floor(Math.random() * 10000) + Date.now() % 10000;
+        // Use deterministic offset based only on seed and level
+        const offset = level * 1337;
         const correctBlock = getRandomFromSeed(seed, 0, blocksPerLevel - 1, offset);
         correctPath.push(correctBlock);
     }
@@ -100,7 +100,7 @@ function generateTowerMines(seed, difficulty) {
         for (let m = 0; m < minesPerLevel; m++) {
             let position;
             do {
-                position = getRandomFromSeed(seed, 0, slotsPerLevel - 1, level * 10 + m + Date.now() % 1000);
+                position = getRandomFromSeed(seed, 0, slotsPerLevel - 1, level * 10 + m);
             } while (used.has(position));
             
             used.add(position);
@@ -157,7 +157,7 @@ function generateCrashMultiplier(seed) {
 function calculateMinesMultiplier(mineCount, tilesRevealed) {
     if (tilesRevealed === 0) return 1;
     
-    const totalTiles = 25;
+    const totalTiles = 16; // 4x4 grid = 16 tiles
     const safeTiles = totalTiles - mineCount;
     
     let multiplier = 1;
