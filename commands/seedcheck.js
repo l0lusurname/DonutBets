@@ -33,7 +33,7 @@ module.exports = {
             const nonce = interaction.options.getString('nonce');
             const expectedHash = interaction.options.getString('hash');
             
-            const isValid = verifySeed(serverSeed, clientSeed, parseInt(nonce), expectedHash);
+            const isValid = verifySeed(serverSeed, clientSeed, nonce, expectedHash);
             
             const embed = new EmbedBuilder()
                 .setTitle('🔍 Seed Verification')
