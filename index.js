@@ -288,11 +288,20 @@ client.on(Events.InteractionCreate, async interaction => {
         }
     } catch (error) {
         console.error('Interaction error:', error);
+        // Only try to reply if the interaction hasn't been handled at all
         if (!interaction.replied && !interaction.deferred) {
             try {
-                await interaction.reply({ content: 'There was an error processing your request!', flags: 64 });
+                await interaction.reply({ content: 'There was an error processing your request!', ephemeral: true });
             } catch (replyError) {
                 console.error('Failed to send error reply:', replyError);
+            }
+        }
+        // If interaction was deferred but not replied to, use editReply instead
+        else if (interaction.deferred && !interaction.replied) {
+            try {
+                await interaction.editReply({ content: 'There was an error processing your request!' });
+            } catch (editError) {
+                console.error('Failed to edit deferred reply:', editError);
             }
         }
     }
