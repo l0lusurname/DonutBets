@@ -166,8 +166,19 @@ function parseFormattedNumber(input) {
     return Math.floor(num);
 }
 
+// Debug: Log all events received by bot
+client.on('raw', (packet) => {
+    if (packet.t === 'INTERACTION_CREATE') {
+        console.log('Raw interaction received:', packet.d.type, packet.d.data?.name || 'no name');
+    }
+});
+
 // Handle all interactions in one place to avoid conflicts
 client.on(Events.InteractionCreate, async interaction => {
+    console.log('=== INTERACTION RECEIVED ===');
+    console.log('Type:', interaction.type);
+    console.log('User:', interaction.user.username);
+    console.log('Command:', interaction.isCommand() ? interaction.commandName : 'Not a command');
     try {
         // Handle chat input commands
         if (interaction.isChatInputCommand()) {
