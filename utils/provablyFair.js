@@ -4,13 +4,13 @@ const crypto = require('crypto');
 function generateSeed() {
     const serverSeed = crypto.randomBytes(32).toString('hex');
     const clientSeed = crypto.randomBytes(16).toString('hex');
-    const nonce = Date.now() + Math.random();
+    const nonce = (Date.now() + Math.random()).toString();
     
     return {
         serverSeed,
         clientSeed,
         nonce,
-        hash: crypto.createHash('sha256').update(serverSeed + clientSeed + nonce.toString()).digest('hex')
+        hash: crypto.createHash('sha256').update(serverSeed + clientSeed + nonce).digest('hex')
     };
 }
 
@@ -32,7 +32,7 @@ function getRandomArray(seed, count, min, max) {
 
 // Verify a seed matches expected results
 function verifySeed(serverSeed, clientSeed, nonce, expectedHash) {
-    const hash = crypto.createHash('sha256').update(serverSeed + clientSeed + nonce).digest('hex');
+    const hash = crypto.createHash('sha256').update(serverSeed + clientSeed + nonce.toString()).digest('hex');
     return hash === expectedHash;
 }
 
