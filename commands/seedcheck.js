@@ -162,9 +162,9 @@ async function generateTowersResultsEmbed(seed, difficulty) {
     let blocksPerLevel;
     switch (difficulty) {
         case 'easy': blocksPerLevel = 4; break;
-        case 'medium': blocksPerLevel = 3; break;
+        case 'medium': blocksPerLevel = 4; break;
         case 'hard': blocksPerLevel = 4; break;
-        default: blocksPerLevel = 3;
+        default: blocksPerLevel = 4;
     }
     
     const correctPath = generateTowersResults(seed, 8, blocksPerLevel);

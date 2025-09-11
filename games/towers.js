@@ -113,7 +113,7 @@ async function startGame(interaction) {
     const difficultyRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder().setCustomId('towers_difficulty_easy').setLabel('🟢 Easy: 4 blocks, 3 safe').setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium: 3 blocks, 1 safe').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('towers_difficulty_medium').setLabel('🟡 Medium: 4 blocks, 2 safe').setStyle(ButtonStyle.Primary),
             new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 4 blocks, 1 safe').setStyle(ButtonStyle.Danger)
         );
 
@@ -276,9 +276,9 @@ async function setupGame(interaction, betAmount, difficulty) {
     let blocksPerLevel;
     switch (difficulty) {
         case 'easy': blocksPerLevel = 4; break;
-        case 'medium': blocksPerLevel = 3; break;
+        case 'medium': blocksPerLevel = 4; break;
         case 'hard': blocksPerLevel = 4; break;
-        default: blocksPerLevel = 3;
+        default: blocksPerLevel = 4;
     }
 
     // Generate a truly unique seed for each game
