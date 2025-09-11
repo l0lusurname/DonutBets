@@ -86,6 +86,48 @@ client.on(Events.MessageCreate, async message => {
             await message.reply('❌ Failed to set casino bank balance. Please try again.');
         }
     }
+    
+    // Check for ?reload command
+    if (message.content.startsWith('?reload')) {
+        // Check if user is the server owner
+        if (message.author.id !== process.env.SERVER_OWNER_ID) {
+            await message.reply('❌ Only the server owner can reload commands.');
+            return;
+        }
+        
+        try {
+            await message.reply('🔄 Reloading slash commands...');
+            
+            // Clear existing commands from Discord
+            await client.application.commands.set([]);
+            
+            // Reload commands from files
+            client.commands.clear();
+            const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+            
+            const commands = [];
+            for (const file of commandFiles) {
+                const filePath = path.join(commandsPath, file);
+                
+                // Clear require cache to reload the file
+                delete require.cache[require.resolve(filePath)];
+                
+                const command = require(filePath);
+                if ('data' in command && 'execute' in command) {
+                    client.commands.set(command.data.name, command);
+                    commands.push(command.data.toJSON());
+                }
+            }
+            
+            // Register commands with Discord
+            await client.application.commands.set(commands);
+            
+            await message.reply(`✅ Successfully reloaded ${commands.length} slash commands!\n\nCommands registered: ${commands.map(cmd => `\`/${cmd.name}\``).join(', ')}`);
+        } catch (error) {
+            console.error('Error reloading commands:', error);
+            await message.reply('❌ Failed to reload commands. Check console for details.');
+        }
+    }
 });
 
 // Parse formatted numbers with K/M/B suffixes

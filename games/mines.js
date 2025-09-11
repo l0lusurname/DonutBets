@@ -536,7 +536,7 @@ async function cashOut(interaction) {
 
     const embed = new EmbedBuilder()
         .setTitle('💰 Cashed Out!')
-        .setDescription('You successfully cashed out!')
+        .setDescription('You successfully cashed out! Here\'s the full board revealed:')
         .setColor('#00FF00')
         .addFields(
             { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
@@ -549,6 +549,26 @@ async function cashOut(interaction) {
             { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
 
+    // Create revealed board showing all mines and diamonds (same as gameOver)
+    const rows = [];
+    for (let i = 0; i < 4; i++) {
+        const row = new ActionRowBuilder();
+        for (let j = 0; j < 4; j++) {
+            const tileNumber = i * 4 + j;
+            const isMine = gameState.minePositions.includes(tileNumber);
+            const wasRevealed = gameState.revealedTiles.has(tileNumber);
+            
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`mines_revealed_${tileNumber}`)
+                    .setLabel(isMine ? '💣' : '💎')
+                    .setStyle(wasRevealed ? ButtonStyle.Success : (isMine ? ButtonStyle.Secondary : ButtonStyle.Success))
+                    .setDisabled(true)
+            );
+        }
+        rows.push(row);
+    }
+
     await logGame(
         userId,
         'Mines',
@@ -559,6 +579,7 @@ async function cashOut(interaction) {
         gameState.seed.hash
     );
 
+    // Add new game button
     const newGameRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
@@ -566,8 +587,9 @@ async function cashOut(interaction) {
                 .setLabel('🎮 New Game')
                 .setStyle(ButtonStyle.Primary)
         );
+    rows.push(newGameRow);
 
-    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
+    await interaction.editReply({ embeds: [embed], components: rows });
 }
 
 module.exports = { handleButton, startGame, cashOut };
