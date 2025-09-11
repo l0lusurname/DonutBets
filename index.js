@@ -176,20 +176,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 return;
             }
 
-            // Check if it's a gambling command
-            const gamblingCommands = ['mines', 'towers', 'crash', 'slots', 'cashout'];
-            if (gamblingCommands.includes(interaction.commandName)) {
-                // Check if user is in their private gambling channel
-                const expectedChannelName = `gambling-${interaction.user.username.toLowerCase()}`;
-                
-                if (interaction.channel.name !== expectedChannelName) {
-                    await interaction.reply({ 
-                        content: '🚫 Gambling commands can only be used in your private gambling room! Use `/setup` to create the gambling channels if they don\'t exist, then click the button in the start-gambling channel to create your room.', 
-                        flags: 64 
-                    });
-                    return;
-                }
-            }
+            // Gambling commands can be used anywhere (removed channel restriction)
 
             // Ensure user exists in database before processing command
             await ensureUserExists(interaction.user.id);
