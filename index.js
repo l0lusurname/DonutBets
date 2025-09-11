@@ -96,8 +96,10 @@ client.on(Events.MessageCreate, async message => {
         }
         
         try {
+            console.log(`Setting casino bank balance to: ${amount}`);
             const { setCasinoBankBalance, formatCurrency } = require('./utils/database');
             await setCasinoBankBalance(amount);
+            console.log(`Successfully set casino bank balance to: ${amount}`);
             await message.reply(`✅ Casino bank balance set to ${formatCurrency(amount)}.`);
         } catch (error) {
             console.error('Error setting casino bank:', error);
