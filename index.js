@@ -87,8 +87,8 @@ client.on(Events.MessageCreate, async message => {
         }
     }
     
-    // Check for ?reload command
-    if (message.content.startsWith('?reload')) {
+    // Check for ?reload command  
+    else if (message.content.startsWith('?reload')) {
         // Check if user is the server owner
         if (message.author.id !== process.env.SERVER_OWNER_ID) {
             await message.reply('❌ Only the server owner can reload commands.');
