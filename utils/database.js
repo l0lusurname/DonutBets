@@ -1,9 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-);
+// Handle URL format - fallback to correct URL if environment variable is malformed
+const supabaseUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http') 
+    ? process.env.SUPABASE_URL 
+    : 'https://vfltbqpabgvbbxuezaah.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Ensure user exists in database
 async function ensureUserExists(userId, username) {

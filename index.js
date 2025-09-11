@@ -12,10 +12,12 @@ const client = new Client({
 });
 
 // Initialize Supabase client
-const supabase = createClient(
-    process.env.SUPABASE_URL || '',
-    process.env.SUPABASE_ANON_KEY || ''
-);
+const supabaseUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http') 
+    ? process.env.SUPABASE_URL 
+    : 'https://vfltbqpabgvbbxuezaah.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Commands collection
 client.commands = new Collection();
