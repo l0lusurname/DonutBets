@@ -1,0 +1,170 @@
+⚙️ Assumptions
+
+Grid size = 16 tiles (4×4).
+
+House edge = 3% (configurable).
+
+Per-click probability model: after each safe pick, remaining tiles reduce by 1.
+
+Factor per pick = (1 / p_safe) * (1 - house_edge).
+
+Cumulative multiplier = product of factors up to that pick.
+
+I show up to 6 safe clicks (or up to max available safe tiles when less than 6).
+
+🔢 Mines — cumulative multipliers (4×4)
+1 mine (15 safe)
+
+click 1: p_safe = 0.937500 → factor = 1.034667 → cumulative 1.034667x
+
+click 2: p_safe = 0.933333 → factor = 1.039286 → cumulative 1.075314x
+
+click 3: p_safe = 0.928571 → factor = 1.044615 → cumulative 1.123290x
+
+click 4: p_safe = 0.923077 → factor = 1.050833 → cumulative 1.180390x
+
+click 5: p_safe = 0.916667 → factor = 1.058182 → cumulative 1.249068x
+
+click 6: p_safe = 0.909091 → factor = 1.067000 → cumulative 1.332755x
+
+3 mines (13 safe)
+
+click 1: p_safe = 0.812500 → factor = 1.193846 → cumulative 1.193846x
+
+click 2: p_safe = 0.800000 → factor = 1.212500 → cumulative 1.447538x
+
+click 3: p_safe = 0.785714 → factor = 1.234545 → cumulative 1.787052x
+
+click 4: p_safe = 0.769231 → factor = 1.261000 → cumulative 2.253473x
+
+click 5: p_safe = 0.750000 → factor = 1.293333 → cumulative 2.914491x
+
+click 6: p_safe = 0.727273 → factor = 1.333750 → cumulative 3.887203x
+
+5 mines (11 safe)
+
+click 1: p_safe = 0.687500 → factor = 1.437091 → cumulative 1.437091x
+
+click 2: p_safe = 0.642857 → factor = 1.556250 → cumulative 2.236505x
+
+click 3: p_safe = 0.590909 → factor = 1.691818 → cumulative 3.783598x
+
+click 4: p_safe = 0.533333 → factor = 1.876667 → cumulative 7.100368x
+
+click 5: p_safe = 0.470588 → factor = 2.123333 → cumulative 15.073134x
+
+click 6: p_safe = 0.409091 → factor = 2.444667 → cumulative 36.835929x
+
+8 mines (8 safe)
+
+click 1: p_safe = 0.500000 → factor = 1.940000 → cumulative 1.940000x
+
+click 2: p_safe = 0.466667 → factor = 2.078571 → cumulative 4.032429x
+
+click 3: p_safe = 0.428571 → factor = 2.263333 → cumulative 9.126730x
+
+click 4: p_safe = 0.384615 → factor = 2.522000 → cumulative 23.017613x
+
+click 5: p_safe = 0.333333 → factor = 2.910000 → cumulative 66.981254x
+
+click 6: p_safe = 0.272727 → factor = 3.556667 → cumulative 238.229993x
+
+12 mines (4 safe)
+
+(only up to 4 safe clicks available)
+
+click 1: p_safe = 0.250000 → factor = 3.880000 → cumulative 3.880000x
+
+click 2: p_safe = 0.200000 → factor = 4.850000 → cumulative 18.818000x
+
+click 3: p_safe = 0.142857 → factor = 6.790000 → cumulative 127.774220x
+
+click 4: p_safe = 0.076923 → factor = 12.610000 → cumulative 1611.232914x
+
+15 mines (1 safe)
+
+(only 1 safe click available)
+
+click 1: p_safe = 0.062500 → factor = 15.520000 → cumulative 15.520000x
+
+🏰 Towers — 8 floors (your exact config)
+
+You said: 4 blocks per floor.
+
+Easy: 3 safe (p = 3/4)
+
+Medium: 2 safe (p = 2/4 = 0.5)
+
+Hard: 1 safe (p = 1/4 = 0.25)
+
+Per-floor factor = (1/p) * (1 - 0.03).
+
+Easy (3 safe / 4 slots)
+
+per-floor factor ≈ 1.293333
+
+cumulatives (floors 1 → 8):
+1: 1.2933x
+2: 1.6727x
+3: 2.1634x
+4: 2.7980x
+5: 3.6187x
+6: 4.6802x
+7: 6.0530x
+8: 7.8286x
+
+Medium (2 safe / 4 slots)
+
+per-floor factor ≈ 1.940000
+
+cumulatives (1 → 8):
+1: 1.9400x
+2: 3.7636x
+3: 7.3014x
+4: 14.1647x
+5: 27.4795x
+6: 53.3102x
+7: 103.4218x
+8: 200.6383x
+
+Hard (1 safe / 4 slots)
+
+per-floor factor ≈ 3.880000
+
+cumulatives (1 → 8):
+1: 3.88x
+2: 15.05x
+3: 58.41x
+4: 226.63x
+5: 879.34x
+6: 3411.85x
+7: 13237.99x
+8: 51363.40x
+
+EXTREME WARNING: Hard tower grows insanely fast. You must cap payouts (see Safety below).
+
+🛡 Safety & config recommendations (do NOT skip)
+
+Max bet = 5% of house balance (e.g., 13M → max bet ≈ 650k).
+
+Payout cap: set a default (e.g., x500) or a fixed numeric cap (e.g., 100M) — whichever you prefer.
+
+Reject bets that would produce a payout > min(payout_cap, house_balance * 0.9) (don’t risk >90% of house in one go).
+
+Disable high-risk modes (e.g., 12 or 15 mines, Hard tower) until house_balance > safety threshold.
+
+Keep house_edge adjustable (2–5%). 3% is a reasonable default.
+
+Display max_bet and payout_cap in the server so players see the limits.
+
+✅ What to give your AI coder (short)
+
+House edge = 0.03 (configurable).
+
+Mines config with cumulative multipliers above (use actual computation rather than hardcoded table if possible).
+
+Towers: per-floor factor logic and cumulation (Easy/Medium/Hard as above).
+
+Enforce max_bet_percentage = 0.05 and payout_cap = 500 by default.
+
+Sanity check before accepting a bet: if potential_payout > min(payout_cap * bet, house_balance * 0.9) then reject.

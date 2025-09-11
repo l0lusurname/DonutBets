@@ -181,6 +181,66 @@ async function updateWithdrawalStatus(withdrawalId, status) {
     }
 }
 
+// Casino bank balance functions
+async function getCasinoBankBalance() {
+    try {
+        const { data, error } = await supabase
+            .from('casino_settings')
+            .select('bank_balance')
+            .eq('id', 1)
+            .maybeSingle();
+
+        if (error) throw error;
+        return data?.bank_balance || 100000000; // Default 100M
+    } catch (error) {
+        console.error('Error getting casino bank balance:', error);
+        return 100000000; // Default fallback
+    }
+}
+
+async function setCasinoBankBalance(amount) {
+    try {
+        const { data, error } = await supabase
+            .from('casino_settings')
+            .upsert({
+                id: 1,
+                bank_balance: amount,
+                updated_at: new Date()
+            }, {
+                onConflict: 'id'
+            });
+
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('Error setting casino bank balance:', error);
+        return false;
+    }
+}
+
+async function updateCasinoBankBalance(amount) {
+    try {
+        const currentBalance = await getCasinoBankBalance();
+        const newBalance = currentBalance + amount;
+        
+        const { error } = await supabase
+            .from('casino_settings')
+            .upsert({
+                id: 1,
+                bank_balance: newBalance,
+                updated_at: new Date()
+            }, {
+                onConflict: 'id'
+            });
+
+        if (error) throw error;
+        return newBalance;
+    } catch (error) {
+        console.error('Error updating casino bank balance:', error);
+        return false;
+    }
+}
+
 module.exports = {
     supabase,
     ensureUserExists,
@@ -191,5 +251,8 @@ module.exports = {
     formatCurrency,
     parseCurrency,
     logWithdrawal,
-    updateWithdrawalStatus
+    updateWithdrawalStatus,
+    getCasinoBankBalance,
+    setCasinoBankBalance,
+    updateCasinoBankBalance
 };

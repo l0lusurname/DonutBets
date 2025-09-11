@@ -50,6 +50,58 @@ client.once(Events.ClientReady, readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
+// Handle message commands like ?bankset
+client.on(Events.MessageCreate, async message => {
+    // Ignore bot messages and DMs
+    if (message.author.bot || !message.guild) return;
+    
+    // Check for ?bankset command
+    if (message.content.startsWith('?bankset ')) {
+        // Check if user is the server owner
+        if (message.author.id !== process.env.SERVER_OWNER_ID) {
+            await message.reply('❌ Only the server owner can set the casino bank balance.');
+            return;
+        }
+        
+        const amountStr = message.content.slice(9).trim(); // Remove "?bankset "
+        
+        if (!amountStr) {
+            await message.reply('❌ Please specify an amount. Example: `?bankset 100m`');
+            return;
+        }
+        
+        const amount = parseFormattedNumber(amountStr);
+        
+        if (isNaN(amount) || amount < 0) {
+            await message.reply('❌ Invalid amount. Please use a positive number with optional K/M/B suffix.');
+            return;
+        }
+        
+        try {
+            const { setCasinoBankBalance, formatCurrency } = require('./utils/database');
+            await setCasinoBankBalance(amount);
+            await message.reply(`✅ Casino bank balance set to ${formatCurrency(amount)}.`);
+        } catch (error) {
+            console.error('Error setting casino bank:', error);
+            await message.reply('❌ Failed to set casino bank balance. Please try again.');
+        }
+    }
+});
+
+// Parse formatted numbers with K/M/B suffixes
+function parseFormattedNumber(input) {
+    if (typeof input === 'number') return input;
+    
+    const str = input.toString().toLowerCase().replace(/,/g, '');
+    const num = parseFloat(str);
+    
+    if (str.includes('k')) return Math.floor(num * 1000);
+    if (str.includes('m')) return Math.floor(num * 1000000);
+    if (str.includes('b')) return Math.floor(num * 1000000000);
+    
+    return Math.floor(num);
+}
+
 // Handle all interactions in one place to avoid conflicts
 client.on(Events.InteractionCreate, async interaction => {
     try {
