@@ -28,14 +28,19 @@ const path = require('path');
 const commandsPath = path.join(__dirname, 'commands');
 if (fs.existsSync(commandsPath)) {
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-    
     for (const file of commandFiles) {
-        const filePath = path.join(commandsPath, file);
-        const command = require(filePath);
-        if ('data' in command && 'execute' in command) {
-            client.commands.set(command.data.name, command);
+        try {
+            const filePath = path.join(commandsPath, file);
+            const command = require(filePath);
+            if ('data' in command && 'execute' in command) {
+                client.commands.set(command.data.name, command);
+            }
+        } catch (error) {
+            console.error(`Error loading command ${file}:`, error);
         }
     }
+} else {
+    console.log('Commands directory does not exist');
 }
 
 // Import utilities
@@ -46,8 +51,21 @@ const { generateSeed, verifySeed } = require('./utils/provablyFair');
 client.supabase = supabase;
 client.utils = { ensureUserExists, formatCurrency, generateSeed, verifySeed };
 
-client.once(Events.ClientReady, readyClient => {
+client.once(Events.ClientReady, async readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    
+    // Register slash commands with Discord
+    try {
+        const commands = [];
+        for (const [name, command] of client.commands) {
+            commands.push(command.data.toJSON());
+        }
+        
+        await client.application.commands.set(commands);
+        console.log(`Successfully registered ${commands.length} slash commands.`);
+    } catch (error) {
+        console.error('Error registering commands:', error);
+    }
 });
 
 // Handle message commands like ?bankset
