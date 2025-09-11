@@ -96,7 +96,7 @@ client.on(Events.MessageCreate, async message => {
         }
         
         try {
-            await message.reply('🔄 Reloading slash commands...');
+            const loadingMsg = await message.reply('🔄 Reloading slash commands...');
             
             // Clear existing commands from Discord
             await client.application.commands.set([]);
@@ -122,7 +122,7 @@ client.on(Events.MessageCreate, async message => {
             // Register commands with Discord
             await client.application.commands.set(commands);
             
-            await message.reply(`✅ Successfully reloaded ${commands.length} slash commands!\n\nCommands registered: ${commands.map(cmd => `\`/${cmd.name}\``).join(', ')}`);
+            await loadingMsg.edit(`✅ Successfully reloaded ${commands.length} slash commands!\n\nCommands registered: ${commands.map(cmd => `\`/${cmd.name}\``).join(', ')}`);
         } catch (error) {
             console.error('Error reloading commands:', error);
             await message.reply('❌ Failed to reload commands. Check console for details.');
