@@ -84,8 +84,8 @@ function generateTowerMines(seed, difficulty) {
             minesPerLevel = 2;  // 2 mines, 1 safe block  
             break;
         case 'hard':
-            slotsPerLevel = 2;
-            minesPerLevel = 1;  // 1 mine, 1 safe block
+            slotsPerLevel = 4;
+            minesPerLevel = 3;  // 3 mines, 1 safe block
             break;
         default:
             slotsPerLevel = 4;
@@ -186,7 +186,7 @@ function calculateTowerMultiplier(difficulty, level) {
             baseMultiplier = 1.41; // 3 slots, 1 mine (2/3 chance)
             break;
         case 'hard':
-            baseMultiplier = 2.12; // 3 slots, 2 mines (1/3 chance)
+            baseMultiplier = 4.0; // 4 slots, 3 mines (1/4 chance)
             break;
         default:
             baseMultiplier = 1.25;

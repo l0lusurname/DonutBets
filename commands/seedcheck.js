@@ -163,7 +163,7 @@ async function generateTowersResultsEmbed(seed, difficulty) {
     switch (difficulty) {
         case 'easy': blocksPerLevel = 4; break;
         case 'medium': blocksPerLevel = 3; break;
-        case 'hard': blocksPerLevel = 2; break;
+        case 'hard': blocksPerLevel = 4; break;
         default: blocksPerLevel = 3;
     }
     
