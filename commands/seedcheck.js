@@ -68,7 +68,10 @@ module.exports = {
             if (!isValid) {
                 const embed = new EmbedBuilder()
                     .setTitle('❌ Invalid Seed')
-                    .setDescription('The provided seed information does not match!')
+                    .setDescription('The provided seed information does not match!\n\n**Required Parameters:**\n• Server Seed\n• Client Seed\n• Nonce\n• Hash\n• Game Type (mines/towers/slots/crash)\n\n**Optional Parameters:**\n• Mine Count (for Mines game)\n• Difficulty (for Towers game)')
+                    .addFields(
+                        { name: 'Provided Information', value: `Server Seed: \`${serverSeed.substring(0, 16)}...\`\nClient Seed: \`${clientSeed}\`\nNonce: \`${nonce}\`\nGame Type: \`${gameType}\``, inline: false }
+                    )
                     .setColor('#FF0000')
                     .setTimestamp();
                 
