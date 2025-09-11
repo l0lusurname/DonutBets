@@ -171,6 +171,8 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
         // Handle chat input commands
         if (interaction.isChatInputCommand()) {
+            console.log(`Command used: ${interaction.commandName} by ${interaction.user.username} (${interaction.user.id})`);
+            
             const command = interaction.client.commands.get(interaction.commandName);
 
             if (!command) {
@@ -181,8 +183,11 @@ client.on(Events.InteractionCreate, async interaction => {
             // Gambling commands can be used anywhere (removed channel restriction)
 
             // Ensure user exists in database before processing command
-            await ensureUserExists(interaction.user.id);
+            console.log(`Ensuring user exists: ${interaction.user.id}`);
+            await ensureUserExists(interaction.user.id, interaction.user.username);
+            console.log(`Executing command: ${interaction.commandName}`);
             await command.execute(interaction);
+            console.log(`Command ${interaction.commandName} completed successfully`);
         }
         
         // Handle button interactions
