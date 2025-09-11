@@ -1,4 +1,3 @@
-
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
 const { generateSeed, generateMinesResults } = require('../utils/provablyFair');
@@ -7,14 +6,14 @@ const activeGames = new Map();
 
 function parseFormattedNumber(input) {
     if (typeof input === 'number') return input;
-    
+
     const str = input.toString().toLowerCase().replace(/,/g, '');
     const num = parseFloat(str);
-    
+
     if (str.includes('k')) return Math.floor(num * 1000);
     if (str.includes('m')) return Math.floor(num * 1000000);
     if (str.includes('b')) return Math.floor(num * 1000000000);
-    
+
     return Math.floor(num);
 }
 
@@ -76,7 +75,7 @@ async function startGame(interaction) {
             content: 'You need at least 100 credits to play Mines!',
             flags: 64
         };
-        
+
         if (interaction.replied || interaction.deferred) {
             await interaction.followUp(reply);
         } else {
@@ -323,7 +322,7 @@ async function setupGame(interaction, betAmount, mineCount) {
         }
         rows.push(row);
     }
-    
+
     // Add cashout button row
     const cashoutRow = new ActionRowBuilder()
         .addComponents(
@@ -363,7 +362,7 @@ async function revealTile(interaction, tileNumber) {
 async function updateGameBoard(interaction, gameState) {
     const revealedSafeTiles = gameState.revealedTiles.size;
     const totalSafeTiles = 16 - gameState.mineCount;
-    
+
     // Better multiplier calculation based on mine count and tiles revealed
     let baseMultiplier;
     if (gameState.mineCount === 1) baseMultiplier = 1.05;
@@ -371,7 +370,7 @@ async function updateGameBoard(interaction, gameState) {
     else if (gameState.mineCount <= 5) baseMultiplier = 1.18;
     else if (gameState.mineCount <= 10) baseMultiplier = 1.25;
     else baseMultiplier = 1.35;
-    
+
     const multiplier = Math.pow(baseMultiplier, revealedSafeTiles);
     const potentialWin = Math.floor(gameState.betAmount * multiplier);
 
@@ -388,7 +387,7 @@ async function updateGameBoard(interaction, gameState) {
         );
 
     const rows = [];
-    
+
     // Create 4x4 grid (16 tiles)
     for (let i = 0; i < 4; i++) {
         const row = new ActionRowBuilder();
@@ -429,10 +428,10 @@ async function gameOver(interaction, gameState, hitMine) {
         .addFields(
             { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
             { name: '💣 Hit Mine', value: `Position ${hitMine}`, inline: true },
-            { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed.substring(0, 16)}...\``, inline: true },
+            { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed}\``, inline: false },
             { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
             { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
-            { name: '🔐 Hash', value: `\`${gameState.seed.hash.substring(0, 16)}...\``, inline: false }
+            { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
 
     await logGame(
@@ -467,7 +466,7 @@ async function cashOut(interaction) {
 
     gameState.gameActive = false;
     const revealedSafeTiles = gameState.revealedTiles.size;
-    
+
     // Better multiplier calculation based on mine count and tiles revealed
     let baseMultiplier;
     if (gameState.mineCount === 1) baseMultiplier = 1.05;
@@ -475,7 +474,7 @@ async function cashOut(interaction) {
     else if (gameState.mineCount <= 5) baseMultiplier = 1.18;
     else if (gameState.mineCount <= 10) baseMultiplier = 1.25;
     else baseMultiplier = 1.35;
-    
+
     const multiplier = Math.pow(baseMultiplier, revealedSafeTiles);
     const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
@@ -492,10 +491,10 @@ async function cashOut(interaction) {
             { name: '🎯 Multiplier', value: `${multiplier.toFixed(2)}x`, inline: true },
             { name: '💰 Win Amount', value: formatCurrency(winAmount), inline: true },
             { name: '📈 Profit', value: formatCurrency(profit), inline: true },
-            { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed.substring(0, 16)}...\``, inline: true },
+            { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed}\``, inline: false },
             { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
             { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
-            { name: '🔐 Hash', value: `\`${gameState.seed.hash.substring(0, 16)}...\``, inline: false }
+            { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
 
     await logGame(
