@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout } = require('../utils/database');
 const { generateSeed, generateMinesResults } = require('../utils/provablyFair');
 
 const activeGames = new Map();
@@ -279,6 +279,30 @@ async function setupGame(interaction, betAmount, mineCount) {
 
     if (balance < betAmount) {
         await interaction.editReply({ content: 'Insufficient balance!', components: [] });
+        return;
+    }
+
+    // Safety check: validate bet amount against max bet limit
+    const maxBet = await getMaxBetAmount();
+    if (betAmount > maxBet) {
+        await interaction.editReply({ 
+            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
+            components: [] 
+        });
+        return;
+    }
+
+    // Safety check: validate potential max payout for this mine configuration
+    const { calculateMinesMultiplier } = require('../utils/provablyFair');
+    const maxPossibleTiles = 16 - mineCount; // All safe tiles
+    const maxMultiplier = await calculateMinesMultiplier(mineCount, maxPossibleTiles);
+    
+    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
+    if (!validation.isValid) {
+        await interaction.editReply({ 
+            content: `❌ ${validation.reasons.join(', ')}`, 
+            components: [] 
+        });
         return;
     }
 

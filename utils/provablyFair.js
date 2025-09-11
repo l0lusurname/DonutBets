@@ -127,12 +127,18 @@ function generateSlotResults(seed) {
 }
 
 // Generate crash multiplier
-function generateCrashMultiplier(seed) {
+async function generateCrashMultiplier(seed, houseEdge = null) {
     const random = getRandomFromSeed(seed, 1, 10000, 0) / 10000;
+    
+    // Get configurable house edge if not provided
+    if (houseEdge === null) {
+        const { getCasinoSettings } = require('./database');
+        const settings = await getCasinoSettings();
+        houseEdge = settings.house_edge;
+    }
     
     // Very aggressive distribution to keep crashes very low
     // Most crashes should be between 1.2x - 3x with heavy bias toward 1.5x-2x
-    const houseEdge = 0.05; // 5% house edge
     
     // Transform random to heavily favor very low crashes
     let adjustedRandom;
@@ -154,11 +160,18 @@ function generateCrashMultiplier(seed) {
 }
 
 // Calculate Mines multipliers using exact mathematical specification
-function calculateMinesMultiplier(mineCount, tilesRevealed) {
+async function calculateMinesMultiplier(mineCount, tilesRevealed, houseEdge = null) {
     if (tilesRevealed === 0) return 1;
     
     const totalTiles = 16; // 4x4 grid = 16 tiles
-    const houseEdge = 0.03; // 3% house edge as per specification
+    
+    // Get configurable house edge if not provided
+    if (houseEdge === null) {
+        const { getCasinoSettings } = require('./database');
+        const settings = await getCasinoSettings();
+        houseEdge = settings.house_edge;
+    }
+    
     let cumulativeMultiplier = 1;
     
     // Per-click probability model: factor per pick = (1 / p_safe) * (1 - house_edge)
@@ -173,33 +186,43 @@ function calculateMinesMultiplier(mineCount, tilesRevealed) {
     return Math.max(1.01, Math.floor(cumulativeMultiplier * 100) / 100);
 }
 
-// Calculate Tower multipliers using exact mathematical specification
-function calculateTowerMultiplier(difficulty, level) {
+// Calculate Tower multipliers using exact mathematical specification  
+async function calculateTowerMultiplier(difficulty, level, houseEdge = null) {
     if (level < 0) return 1;
     
-    const houseEdge = 0.03; // 3% house edge as per specification
-    let perFloorFactor;
-    
-    // Per-floor factor = (1/p) * (1 - house_edge) where p = safe_slots / total_slots
-    switch (difficulty) {
-        case 'easy':
-            // 3 safe, 1 mine (p = 3/4)
-            perFloorFactor = (1 / (3/4)) * (1 - houseEdge);
-            break;
-        case 'medium':
-            // 2 safe, 2 mines (p = 2/4 = 0.5)
-            perFloorFactor = (1 / 0.5) * (1 - houseEdge);
-            break;
-        case 'hard':
-            // 1 safe, 3 mines (p = 1/4 = 0.25)
-            perFloorFactor = (1 / 0.25) * (1 - houseEdge);
-            break;
-        default:
-            perFloorFactor = (1 / (3/4)) * (1 - houseEdge);
+    // Get configurable house edge if not provided
+    if (houseEdge === null) {
+        const { getCasinoSettings } = require('./database');
+        const settings = await getCasinoSettings();
+        houseEdge = settings.house_edge;
     }
     
-    // Cumulative multiplier = per-floor factor raised to the power of floors passed
-    const cumulativeMultiplier = Math.pow(perFloorFactor, level + 1);
+    let perFloorFactor;
+    const totalSlots = 4; // 4 blocks per floor as per spec
+    
+    // Per-floor factor = (totalSlots/safeSlots) * (1 - house_edge)
+    switch (difficulty) {
+        case 'easy':
+            // 3 safe, 1 mine 
+            perFloorFactor = (totalSlots / 3) * (1 - houseEdge);
+            break;
+        case 'medium':
+            // 2 safe, 2 mines 
+            perFloorFactor = (totalSlots / 2) * (1 - houseEdge);
+            break;
+        case 'hard':
+            // 1 safe, 3 mines 
+            perFloorFactor = (totalSlots / 1) * (1 - houseEdge);
+            break;
+        default:
+            perFloorFactor = (totalSlots / 3) * (1 - houseEdge);
+    }
+    
+    // Cumulative multiplier = per-floor factor compounded for each floor
+    let cumulativeMultiplier = 1;
+    for (let floor = 0; floor <= level; floor++) {
+        cumulativeMultiplier *= perFloorFactor;
+    }
     
     return Math.max(1.01, Math.floor(cumulativeMultiplier * 100) / 100);
 }
