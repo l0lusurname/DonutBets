@@ -428,7 +428,11 @@ async function gameOver(interaction, gameState, hitMine) {
         .setColor('#FF0000')
         .addFields(
             { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
-            { name: '💣 Hit Mine', value: `Position ${hitMine}`, inline: true }
+            { name: '💣 Hit Mine', value: `Position ${hitMine}`, inline: true },
+            { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed.substring(0, 16)}...\``, inline: true },
+            { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
+            { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
+            { name: '🔐 Hash', value: `\`${gameState.seed.hash.substring(0, 16)}...\``, inline: false }
         );
 
     await logGame(
@@ -487,7 +491,11 @@ async function cashOut(interaction) {
             { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
             { name: '🎯 Multiplier', value: `${multiplier.toFixed(2)}x`, inline: true },
             { name: '💰 Win Amount', value: formatCurrency(winAmount), inline: true },
-            { name: '📈 Profit', value: formatCurrency(profit), inline: true }
+            { name: '📈 Profit', value: formatCurrency(profit), inline: true },
+            { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed.substring(0, 16)}...\``, inline: true },
+            { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
+            { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
+            { name: '🔐 Hash', value: `\`${gameState.seed.hash.substring(0, 16)}...\``, inline: false }
         );
 
     await logGame(
