@@ -1,0 +1,119 @@
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746054812340304/aW50ZXJhY3Rpb246MTQxNTc0NjA1NDgxMjM0MDMwNDp0QmxhUnJ6SmxyblRxS0NmSDBjclZXakFYT1dKTjB3Q0tIWGNxeHFUTTZRUkY4SHBwQ0IyeUJzNmhSUzVBWW5DZDJhNDhXdUU4Vk5mSUVlVXFTQnJjdk8yYUNTYm54ZXFjY3JLMnZtd0JtUkFINUx2bnprYzg4Q3QydndJZVdBbQ/callback?with_response=false'
+}
+Mines button error: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.deferUpdate (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:312:22)
+    at async Object.handleButton (/app/games/mines.js:25:13)
+    at async Client.<anonymous> (/app/index.js:252:21) {
+  requestBody: { files: undefined, json: { type: 6 } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746350208913529/aW50ZXJhY3Rpb246MTQxNTc0NjM1MDIwODkxMzUyOTpBNjlqaEU3VEJIRXZwQkJUQzR3UUpoQU9wZlRYOWNMbHRLSUFKN2VzVjR2Mkw1bTYyazZZa1U1eG5Hb2c1S3R5c0plWTBtekxQd0pFREgyWmdRT2hnSU5jQ0dZSmVUamhqd3ZGSmtDWjNKZlBNdXNLNjUxMmlUM1RaWmdkVDZsSw/callback?with_response=false'
+}
+Interaction error: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.reply (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:200:22)
+    at async Object.handleButton (/app/games/mines.js:62:13)
+    at async Client.<anonymous> (/app/index.js:252:21) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746350208913529/aW50ZXJhY3Rpb246MTQxNTc0NjM1MDIwODkxMzUyOTpBNjlqaEU3VEJIRXZwQkJUQzR3UUpoQU9wZlRYOWNMbHRLSUFKN2VzVjR2Mkw1bTYyazZZa1U1eG5Hb2c1S3R5c0plWTBtekxQd0pFREgyWmdRT2hnSU5jQ0dZSmVUamhqd3ZGSmtDWjNKZlBNdXNLNjUxMmlUM1RaWmdkVDZsSw/callback?with_response=false'
+}
+Failed to send error reply: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.reply (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:200:22)
+    at async Client.<anonymous> (/app/index.js:286:17) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746350208913529/aW50ZXJhY3Rpb246MTQxNTc0NjM1MDIwODkxMzUyOTpBNjlqaEU3VEJIRXZwQkJUQzR3UUpoQU9wZlRYOWNMbHRLSUFKN2VzVjR2Mkw1bTYyazZZa1U1eG5Hb2c1S3R5c0plWTBtekxQd0pFREgyWmdRT2hnSU5jQ0dZSmVUamhqd3ZGSmtDWjNKZlBNdXNLNjUxMmlUM1RaWmdkVDZsSw/callback?with_response=false'
+}
+Mines button error: Error [InteractionAlreadyReplied]: The reply to this interaction has already been sent or deferred.
+    at ButtonInteraction.deferUpdate (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:299:46)
+    at cashOut (/app/games/mines.js:512:27)
+    at Object.handleButton (/app/games/mines.js:53:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Client.<anonymous> (/app/index.js:252:21) {
+  code: 'InteractionAlreadyReplied'
+}
+Mines button error: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.deferUpdate (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:312:22)
+    at async Object.handleButton (/app/games/mines.js:25:13)
+    at async Client.<anonymous> (/app/index.js:252:21) {
+  requestBody: { files: undefined, json: { type: 6 } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746387009605764/aW50ZXJhY3Rpb246MTQxNTc0NjM4NzAwOTYwNTc2NDpGeGlwYjVoeGtxdURMalR1eHJtVDFqWng5UlRDdHlsTmE3ZU5TTUs5bzZJZ0dSSVZ5c3d4Q1owSkprcXJxcFlpdVZqejJ1YjI4QVpJN010cHZybGUzTjM2VXJrakVvY0MxUkF5bjN3bGV6dUxsZ2RocGJ3c0tocEIwV0hjeEw1Nw/callback?with_response=false'
+}
+Interaction error: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.reply (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:200:22)
+    at async Object.handleButton (/app/games/mines.js:62:13)
+    at async Client.<anonymous> (/app/index.js:252:21) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746387009605764/aW50ZXJhY3Rpb246MTQxNTc0NjM4NzAwOTYwNTc2NDpGeGlwYjVoeGtxdURMalR1eHJtVDFqWng5UlRDdHlsTmE3ZU5TTUs5bzZJZ0dSSVZ5c3d4Q1owSkprcXJxcFlpdVZqejJ1YjI4QVpJN010cHZybGUzTjM2VXJrakVvY0MxUkF5bjN3bGV6dUxsZ2RocGJ3c0tocEIwV0hjeEw1Nw/callback?with_response=false'
+}
+Failed to send error reply: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.reply (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:200:22)
+    at async Client.<anonymous> (/app/index.js:286:17) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415746387009605764/aW50ZXJhY3Rpb246MTQxNTc0NjM4NzAwOTYwNTc2NDpGeGlwYjVoeGtxdURMalR1eHJtVDFqWng5UlRDdHlsTmE3ZU5TTUs5bzZJZ0dSSVZ5c3d4Q1owSkprcXJxcFlpdVZqejJ1YjI4QVpJN010cHZybGUzTjM2VXJrakVvY0MxUkF5bjN3bGV6dUxsZ2RocGJ3c0tocEIwV0hjeEw1Nw/callback?with_response=false'
+}

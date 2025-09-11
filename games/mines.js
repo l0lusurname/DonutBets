@@ -21,6 +21,7 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
+        // Only defer if we haven't responded yet
         if (!interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
@@ -58,10 +59,15 @@ async function handleButton(interaction, params) {
         }
     } catch (error) {
         console.error('Mines button error:', error);
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'An error occurred!', flags: 64 });
-        } else if (interaction.deferred) {
-            await interaction.editReply({ content: 'An error occurred!', components: [] });
+        // Only try to respond if we haven't already
+        try {
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: 'An error occurred!', flags: 64 });
+            } else if (interaction.deferred && !interaction.replied) {
+                await interaction.editReply({ content: 'An error occurred!', components: [] });
+            }
+        } catch (responseError) {
+            console.error('Failed to send error response:', responseError.message);
         }
     }
 }
@@ -365,12 +371,10 @@ async function revealTile(interaction, tileNumber) {
     const gameState = activeGames.get(userId);
 
     if (!gameState || !gameState.gameActive) {
-        await interaction.deferUpdate();
         return;
     }
 
     if (gameState.revealedTiles.has(tileNumber)) {
-        await interaction.deferUpdate();
         return;
     }
 
@@ -509,7 +513,6 @@ async function cashOut(interaction) {
     const gameState = activeGames.get(userId);
 
     if (!gameState || !gameState.gameActive) {
-        await interaction.deferUpdate();
         return;
     }
 
