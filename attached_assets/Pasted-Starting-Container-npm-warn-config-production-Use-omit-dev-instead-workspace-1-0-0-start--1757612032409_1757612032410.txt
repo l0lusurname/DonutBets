@@ -1,0 +1,75 @@
+Starting Container
+npm warn config production Use `--omit=dev` instead.
+> workspace@1.0.0 start
+> node index.js
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.2] injecting env (0) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+Ready! Logged in as DonutBets#5873
+Stopping Container
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c node index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-09-11T17_17_40_980Z-debug-0.log
+Starting Container
+npm warn config production Use `--omit=dev` instead.
+> workspace@1.0.0 start
+> node index.js
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Ready! Logged in as DonutBets#5873
+Successfully registered 11 slash commands.
+Stopping Container
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c node index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-09-11T17_23_11_495Z-debug-0.log
+Starting Container
+npm warn config production Use `--omit=dev` instead.
+> workspace@1.0.0 start
+> node index.js
+⚠️  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217
+[dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Ready! Logged in as DonutBets#5873
+Successfully registered 11 slash commands.
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c node index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2025-09-11T17_27_35_212Z-debug-0.log
+Stopping Container
+Interaction error: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.reply (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:200:22)
+    at async Client.<anonymous> (/app/index.js:265:17) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415751893774237818/aW50ZXJhY3Rpb246MTQxNTc1MTg5Mzc3NDIzNzgxODp0SlJPQWwzNnJxcjJWcXhqc0Roa3pqczdkeDg5U2tYZ1VZQVYwS3BJcFdzZHpzVE5aRzVkMEk1Um1jV0V6MXdQMXZXSDc2eFhlZWo4YkpobnNwdDVpS1gwWnE2ZnVRdFcxdnlFd1llTkdzdE1qVjNUZWJ2cWFXRmluS1pWRGhQNw/callback?with_response=false'
+}
+Failed to send error reply: DiscordAPIError[40060]: Interaction has already been acknowledged.
+    at handleErrors (/app/node_modules/@discordjs/rest/dist/index.js:762:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async BurstHandler.runRequest (/app/node_modules/@discordjs/rest/dist/index.js:866:23)
+    at async _REST.request (/app/node_modules/@discordjs/rest/dist/index.js:1307:22)
+    at async ButtonInteraction.reply (/app/node_modules/discord.js/src/structures/interfaces/InteractionResponses.js:200:22)
+    at async Client.<anonymous> (/app/index.js:306:17) {
+  requestBody: { files: [], json: { type: 4, data: [Object] } },
+  rawError: {
+    message: 'Interaction has already been acknowledged.',
+    code: 40060
+  },
+  code: 40060,
+  status: 400,
+  method: 'POST',
+  url: 'https://discord.com/api/v10/interactions/1415751893774237818/aW50ZXJhY3Rpb246MTQxNTc1MTg5Mzc3NDIzNzgxODp0SlJPQWwzNnJxcjJWcXhqc0Roa3pqczdkeDg5U2tYZ1VZQVYwS3BJcFdzZHpzVE5aRzVkMEk1Um1jV0V6MXdQMXZXSDc2eFhlZWo4YkpobnNwdDVpS1gwWnE2ZnVRdFcxdnlFd1llTkdzdE1qVjNUZWJ2cWFXRmluS1pWRGhQNw/callback?with_response=false'
+}
