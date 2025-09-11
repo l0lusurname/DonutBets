@@ -296,6 +296,7 @@ async function setupGame(interaction, betAmount, difficulty) {
         blocksPerLevel,
         correctPath,
         currentLevel: 0,
+        chosenPath: [],  // Track player's choices
         gameActive: true,
         seed: uniqueSeed
     };
@@ -374,6 +375,9 @@ async function selectTile(interaction, level, block) {
         return;
     }
 
+    // Track the player's choice
+    gameState.chosenPath[level] = block;
+    
     if (block === gameState.correctPath[level]) {
         gameState.currentLevel++;
         if (gameState.currentLevel >= 8) {
@@ -436,7 +440,7 @@ async function loseGame(interaction, gameState) {
 
     const embed = new EmbedBuilder()
         .setTitle('💥 Game Over!')
-        .setDescription('You chose the wrong block!')
+        .setDescription('You chose the wrong block! Here\'s the full correct path revealed:')
         .setColor('#FF0000')
         .addFields(
             { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
@@ -446,6 +450,52 @@ async function loseGame(interaction, gameState) {
             { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
             { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
+
+    // Show revealed tower with full path
+    const rows = [];
+    
+    // Show 4 levels (start from top to make it look like a tower)
+    for (let level = 0; level < 4; level++) {
+        const row = new ActionRowBuilder();
+        const blocksPerLevel = gameState.blocksPerLevel;
+        
+        for (let block = 0; block < blocksPerLevel; block++) {
+            const isCorrect = gameState.correctPath[level] === block;
+            const wasChosen = gameState.chosenPath && gameState.chosenPath[level] === block;
+            const isFailurePoint = level === gameState.currentLevel && wasChosen && !isCorrect;
+            
+            let style, label;
+            if (isFailurePoint) {
+                style = ButtonStyle.Danger;
+                label = '💥';  // Wrong choice that ended game
+            } else if (isCorrect) {
+                style = ButtonStyle.Success;
+                label = '✅';  // Correct path
+            } else {
+                style = ButtonStyle.Secondary;
+                label = '❌';  // Wrong blocks
+            }
+            
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`towers_revealed_${level}_${block}`)
+                    .setLabel(label)
+                    .setStyle(style)
+                    .setDisabled(true)
+            );
+        }
+        rows.push(row);
+    }
+
+    // Add new game button
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('towers_newgame')
+                .setLabel('🎮 New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+    rows.push(newGameRow);
 
     await logGame(
         gameState.userId,
@@ -457,15 +507,7 @@ async function loseGame(interaction, gameState) {
         gameState.seed.hash
     );
 
-    const newGameRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('towers_newgame')
-                .setLabel('🎮 New Game')
-                .setStyle(ButtonStyle.Primary)
-        );
-
-    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
+    await interaction.editReply({ embeds: [embed], components: rows });
 }
 
 async function cashOut(interaction) {
