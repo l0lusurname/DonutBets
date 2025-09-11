@@ -261,13 +261,24 @@ async function endCrashGame(interaction, gameState, crashed) {
     const userId = gameState.userId;
 
     if (crashed) {
+        // Calculate what the potential winnings could have been
+        const potentialWin = Math.floor(gameState.betAmount * gameState.crashPoint);
+        const missedProfit = potentialWin - gameState.betAmount;
+        
         const embed = new EmbedBuilder()
             .setTitle('💥 CRASHED!')
-            .setDescription(`Crashed at **${gameState.crashPoint.toFixed(2)}x**`)
+            .setDescription(`The multiplier crashed at **${gameState.crashPoint.toFixed(2)}x**!\nHere's what you could have won if you cashed out earlier:`)
             .setColor('#FF0000')
             .addFields(
                 { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
-                { name: '💥 Crash Point', value: `${gameState.crashPoint.toFixed(2)}x`, inline: true }
+                { name: '💥 Crash Point', value: `${gameState.crashPoint.toFixed(2)}x`, inline: true },
+                { name: '📊 Could Have Won', value: formatCurrency(potentialWin), inline: true },
+                { name: '💸 Missed Profit', value: formatCurrency(missedProfit), inline: true },
+                { name: '🎯 Max Safe Cashout', value: `${(gameState.crashPoint - 0.01).toFixed(2)}x`, inline: true },
+                { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed}\``, inline: false },
+                { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
+                { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
+                { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
             );
 
         await logGame(userId, 'Crash', gameState.betAmount, 'Loss', 0, -gameState.betAmount, gameState.seed.hash);
