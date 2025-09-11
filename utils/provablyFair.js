@@ -36,46 +36,15 @@ function verifySeed(serverSeed, clientSeed, nonce, expectedHash) {
     return hash === expectedHash;
 }
 
-// Generate mines positions for Mines game (RIGGED for 60% lose rate)
+// Generate mines positions for Mines game (4x4 grid)
 function generateMinesResults(seed, mineCount) {
     const positions = [];
     const used = new Set();
     
-    // Common player click patterns - weighted positions (0-24 for 5x5 grid)
-    // Players typically click corners, center, and edges first
-    const hotSpots = [
-        0, 4, 20, 24,    // corners (high priority)
-        12,              // center (high priority) 
-        2, 10, 14, 22,   // edges (medium priority)
-        6, 8, 16, 18,    // near center (medium priority)
-        1, 3, 5, 9, 15, 19, 21, 23  // other positions (lower priority)
-    ];
-    
-    // 60% chance to place mines in hot spots first
-    let minesPlaced = 0;
-    const shouldRig = getRandomFromSeed(seed, 1, 100, 999) <= 60;
-    
-    if (shouldRig && mineCount >= 1) {
-        // Place 70% of mines in hot spots for higher lose rate
-        const riggedMines = Math.max(1, Math.ceil(mineCount * 0.7));
-        
-        for (let i = 0; i < riggedMines && minesPlaced < mineCount; i++) {
-            let hotSpotIndex = getRandomFromSeed(seed, 0, Math.min(7, hotSpots.length - 1), i + 500);
-            let position = hotSpots[hotSpotIndex];
-            
-            if (!used.has(position)) {
-                used.add(position);
-                positions.push(position);
-                minesPlaced++;
-            }
-        }
-    }
-    
-    // Fill remaining mines randomly
-    for (let i = minesPlaced; i < mineCount; i++) {
+    for (let i = 0; i < mineCount; i++) {
         let position;
         do {
-            position = getRandomFromSeed(seed, 0, 24, i + 100); // 25 tiles (0-24) for 5x5 grid
+            position = getRandomFromSeed(seed, 0, 15, i + 100); // 16 tiles (0-15) for 4x4 grid
         } while (used.has(position));
         
         used.add(position);

@@ -423,7 +423,7 @@ async function gameOver(interaction, gameState, hitMine) {
 
     const embed = new EmbedBuilder()
         .setTitle('💣 Game Over!')
-        .setDescription('You hit a mine!')
+        .setDescription('You hit a mine! Here\'s the full board revealed:')
         .setColor('#FF0000')
         .addFields(
             { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
@@ -433,6 +433,36 @@ async function gameOver(interaction, gameState, hitMine) {
             { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
             { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
+
+    // Create revealed board showing all mines and diamonds
+    const rows = [];
+    for (let i = 0; i < 4; i++) {
+        const row = new ActionRowBuilder();
+        for (let j = 0; j < 4; j++) {
+            const tileNumber = i * 4 + j;
+            const isMine = gameState.minePositions.includes(tileNumber);
+            const isHitMine = tileNumber === hitMine;
+            
+            row.addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`mines_revealed_${tileNumber}`)
+                    .setLabel(isMine ? '💣' : '💎')
+                    .setStyle(isHitMine ? ButtonStyle.Danger : (isMine ? ButtonStyle.Secondary : ButtonStyle.Success))
+                    .setDisabled(true)
+            );
+        }
+        rows.push(row);
+    }
+
+    // Add new game button
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_newgame')
+                .setLabel('🎮 New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+    rows.push(newGameRow);
 
     await logGame(
         gameState.userId,
@@ -444,15 +474,7 @@ async function gameOver(interaction, gameState, hitMine) {
         gameState.seed.hash
     );
 
-    const newGameRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('mines_newgame')
-                .setLabel('🎮 New Game')
-                .setStyle(ButtonStyle.Primary)
-        );
-
-    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
+    await interaction.editReply({ embeds: [embed], components: rows });
 }
 
 async function cashOut(interaction) {
