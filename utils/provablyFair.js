@@ -153,49 +153,55 @@ function generateCrashMultiplier(seed) {
     return Math.max(1.2, Math.min(10, crashPoint));
 }
 
-// Calculate Mines multipliers
+// Calculate Mines multipliers using exact mathematical specification
 function calculateMinesMultiplier(mineCount, tilesRevealed) {
     if (tilesRevealed === 0) return 1;
     
     const totalTiles = 16; // 4x4 grid = 16 tiles
-    const safeTiles = totalTiles - mineCount;
+    const houseEdge = 0.03; // 3% house edge as per specification
+    let cumulativeMultiplier = 1;
     
-    let multiplier = 1;
-    for (let i = 0; i < tilesRevealed; i++) {
-        const safeRemaining = safeTiles - i;
-        const totalRemaining = totalTiles - i;
-        multiplier = multiplier * (totalRemaining / safeRemaining);
+    // Per-click probability model: factor per pick = (1 / p_safe) * (1 - house_edge)
+    for (let click = 1; click <= tilesRevealed; click++) {
+        const tilesRemaining = totalTiles - (click - 1);
+        const safeTilesRemaining = (totalTiles - mineCount) - (click - 1);
+        const pSafe = safeTilesRemaining / tilesRemaining;
+        const factor = (1 / pSafe) * (1 - houseEdge);
+        cumulativeMultiplier *= factor;
     }
     
-    // Apply house edge (2%)
-    multiplier = multiplier * 0.98;
-    
-    return Math.max(1.01, Math.floor(multiplier * 100) / 100);
+    return Math.max(1.01, Math.floor(cumulativeMultiplier * 100) / 100);
 }
 
-// Calculate Tower multipliers
+// Calculate Tower multipliers using exact mathematical specification
 function calculateTowerMultiplier(difficulty, level) {
     if (level < 0) return 1;
     
-    let baseMultiplier;
+    const houseEdge = 0.03; // 3% house edge as per specification
+    let perFloorFactor;
+    
+    // Per-floor factor = (1/p) * (1 - house_edge) where p = safe_slots / total_slots
     switch (difficulty) {
         case 'easy':
-            baseMultiplier = 1.25; // 4 slots, 1 mine (3/4 chance)
+            // 3 safe, 1 mine (p = 3/4)
+            perFloorFactor = (1 / (3/4)) * (1 - houseEdge);
             break;
         case 'medium':
-            baseMultiplier = 2.0; // 4 slots, 2 mines (2/4 chance)
+            // 2 safe, 2 mines (p = 2/4 = 0.5)
+            perFloorFactor = (1 / 0.5) * (1 - houseEdge);
             break;
         case 'hard':
-            baseMultiplier = 4.0; // 4 slots, 3 mines (1/4 chance)
+            // 1 safe, 3 mines (p = 1/4 = 0.25)
+            perFloorFactor = (1 / 0.25) * (1 - houseEdge);
             break;
         default:
-            baseMultiplier = 1.25;
+            perFloorFactor = (1 / (3/4)) * (1 - houseEdge);
     }
     
-    const multiplier = Math.pow(baseMultiplier, level + 1);
+    // Cumulative multiplier = per-floor factor raised to the power of floors passed
+    const cumulativeMultiplier = Math.pow(perFloorFactor, level + 1);
     
-    // Apply house edge (2%)
-    return Math.floor(multiplier * 0.98 * 100) / 100;
+    return Math.max(1.01, Math.floor(cumulativeMultiplier * 100) / 100);
 }
 
 module.exports = {
