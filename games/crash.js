@@ -227,14 +227,16 @@ async function updateCrashGame(interaction, gameState) {
         newMultiplier = 1.6 + (acceleratedTime * (0.05 + acceleration));
     }
 
-    gameState.currentMultiplier = parseFloat(newMultiplier.toFixed(2));
-
-    if (gameState.currentMultiplier >= gameState.crashPoint) {
+    // Check if the new multiplier would exceed or meet the crash point
+    if (newMultiplier >= gameState.crashPoint && gameState.crashPoint > 0) {
+        gameState.currentMultiplier = gameState.crashPoint;
         gameState.crashed = true;
         gameState.gameActive = false;
         await endCrashGame(interaction, gameState, true);
         return;
     }
+
+    gameState.currentMultiplier = parseFloat(newMultiplier.toFixed(2));
 
     const embed = new EmbedBuilder()
         .setTitle('🚀 Crash Game - FLYING!')
