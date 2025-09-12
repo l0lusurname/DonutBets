@@ -178,6 +178,8 @@ async function startCrashGame(interaction, betAmount) {
 
     const seed = generateSeed();
     const crashPoint = generateCrashMultiplier(seed);
+    
+    console.log(`🎲 NEW CRASH GAME - Crash Point: ${crashPoint}x`);
 
     const gameState = {
         userId,
@@ -203,6 +205,7 @@ async function updateCrashGame(interaction, gameState) {
 
     // Check for instant crash (0x)
     if (gameState.crashPoint === 0) {
+        console.log(`💥 INSTANT CRASH at 0x`);
         gameState.crashed = true;
         gameState.gameActive = false;
         gameState.currentMultiplier = 0;
@@ -227,8 +230,14 @@ async function updateCrashGame(interaction, gameState) {
         newMultiplier = 1.6 + (acceleratedTime * (0.05 + acceleration));
     }
 
+    // Round to 2 decimal places for comparison
+    newMultiplier = Math.round(newMultiplier * 100) / 100;
+    
+    console.log(`🚀 Current: ${gameState.currentMultiplier}x -> New: ${newMultiplier}x | Crash at: ${gameState.crashPoint}x`);
+
     // Check if the new multiplier would exceed or meet the crash point
     if (newMultiplier >= gameState.crashPoint && gameState.crashPoint > 0) {
+        console.log(`💥 CRASH! ${newMultiplier}x >= ${gameState.crashPoint}x`);
         gameState.currentMultiplier = gameState.crashPoint;
         gameState.crashed = true;
         gameState.gameActive = false;
