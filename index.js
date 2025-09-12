@@ -215,7 +215,11 @@ client.on(Events.InteractionCreate, async interaction => {
                             { name: '🎰 How to get your gambling room:', value: '1. Go to **✅ start-gambling** channel\n2. Click **🎰 Create Gambling Room**\n3. Use gambling commands in your private room', inline: false }
                         );
                     
-                    await interaction.reply({ embeds: [embed], flags: 64 });
+                    try {
+                        await interaction.reply({ embeds: [embed], ephemeral: true });
+                    } catch (error) {
+                        console.error('Failed to send gambling room error:', error);
+                    }
                     return;
                 }
             }
@@ -236,6 +240,35 @@ client.on(Events.InteractionCreate, async interaction => {
             
             // Ensure user exists in database before processing
             await ensureUserExists(interaction.user.id, interaction.user.username);
+            
+            // Check if gambling button interactions are used in proper gambling channel
+            const gamblingGames = ['mines', 'towers', 'crash', 'slots'];
+            if (gamblingGames.includes(game)) {
+                const channelName = interaction.channel.name;
+                const username = interaction.user.username.toLowerCase();
+                const expectedChannelName = `gambling-${username}`;
+                
+                if (channelName !== expectedChannelName) {
+                    const embed = new EmbedBuilder()
+                        .setTitle('🚫 Wrong Channel!')
+                        .setDescription('You can only gamble in your private gambling room!')
+                        .setColor('#FF0000')
+                        .addFields(
+                            { name: '🎰 How to get your gambling room:', value: '1. Go to **✅ start-gambling** channel\n2. Click **🎰 Create Gambling Room**\n3. Use gambling commands in your private room', inline: false }
+                        );
+                    
+                    try {
+                        if (!interaction.replied && !interaction.deferred) {
+                            await interaction.reply({ embeds: [embed], ephemeral: true });
+                        } else {
+                            await interaction.followUp({ embeds: [embed], ephemeral: true });
+                        }
+                    } catch (error) {
+                        console.error('Failed to send gambling room error for button:', error);
+                    }
+                    return;
+                }
+            }
             
             // Handle gambling room creation
             if (game === 'gambling' && action === 'create' && params[0] === 'room') {
