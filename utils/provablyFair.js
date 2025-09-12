@@ -38,17 +38,31 @@ function verifySeed(serverSeed, clientSeed, nonce, expectedHash) {
 
 // Generate mines positions for Mines game (4x4 grid)
 function generateMinesResults(seed, mineCount) {
+    // Validate mine count
+    if (mineCount < 1) mineCount = 1;
+    if (mineCount > 15) mineCount = 15; // Max 15 mines in 16-tile grid (leave at least 1 safe)
+    
+    // Create array of all possible positions
+    const allPositions = [];
+    for (let i = 0; i < 16; i++) {
+        allPositions.push(i);
+    }
+    
+    // Fisher-Yates shuffle algorithm using provably fair random
     const positions = [];
-    const used = new Set();
+    const remaining = [...allPositions];
     
     for (let i = 0; i < mineCount; i++) {
-        let position;
-        do {
-            position = getRandomFromSeed(seed, 0, 15, i + 100); // 16 tiles (0-15) for 4x4 grid
-        } while (used.has(position));
+        // Get random index from remaining positions
+        const randomIndex = getRandomFromSeed(seed, 0, remaining.length - 1, i + 100);
         
-        used.add(position);
-        positions.push(position);
+        // Take the position at that index
+        const selectedPosition = remaining[randomIndex];
+        positions.push(selectedPosition);
+        
+        // Remove selected position from remaining (swap with last and pop)
+        remaining[randomIndex] = remaining[remaining.length - 1];
+        remaining.pop();
     }
     
     return positions.sort((a, b) => a - b);
