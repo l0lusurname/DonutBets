@@ -174,6 +174,54 @@ function parseFormattedNumber(input) {
     return Math.floor(num);
 }
 
+// Safe reply utility that handles interaction states
+async function safeReply(interaction, options) {
+    try {
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.reply({ ...options, ephemeral: true });
+        } else if (interaction.deferred && !interaction.replied) {
+            // Remove ephemeral from editReply options since it can't be changed after defer
+            const { ephemeral, ...editOptions } = options;
+            await interaction.editReply(editOptions);
+        } else {
+            await interaction.followUp({ ...options, ephemeral: true });
+        }
+    } catch (error) {
+        console.error('Error in safeReply:', error);
+    }
+}
+
+// Gambling room guard - returns true if in correct channel, false if restricted
+function ensureInGamblingRoom(interaction, gameName) {
+    // Check if it's a guild interaction with proper channel
+    if (!interaction.guild || !interaction.channel || !interaction.channel.name) {
+        const embed = new EmbedBuilder()
+            .setTitle('🚫 Invalid Channel!')
+            .setDescription('Gambling commands can only be used in your private gambling room!')
+            .setColor('#FF0000');
+        safeReply(interaction, { embeds: [embed] });
+        return false;
+    }
+    
+    const channelName = interaction.channel.name;
+    const username = interaction.user.username.toLowerCase();
+    const expectedChannelName = `gambling-${username}`;
+    
+    if (channelName !== expectedChannelName) {
+        const embed = new EmbedBuilder()
+            .setTitle('🚫 Wrong Channel!')
+            .setDescription('You can only gamble in your private gambling room!')
+            .setColor('#FF0000')
+            .addFields(
+                { name: '🎰 How to get your gambling room:', value: '1. Go to **✅ start-gambling** channel\n2. Click **🎰 Create Gambling Room**\n3. Use gambling commands in your private room', inline: false }
+            );
+        safeReply(interaction, { embeds: [embed] });
+        return false;
+    }
+    
+    return true;
+}
+
 // Debug: Log all events received by bot
 client.on('raw', (packet) => {
     if (packet.t === 'INTERACTION_CREATE') {
@@ -202,25 +250,8 @@ client.on(Events.InteractionCreate, async interaction => {
             // Check if gambling commands are used in proper gambling channel
             const gamblingCommands = ['mines', 'towers', 'crash', 'slots'];
             if (gamblingCommands.includes(interaction.commandName)) {
-                const channelName = interaction.channel.name;
-                const username = interaction.user.username.toLowerCase();
-                const expectedChannelName = `gambling-${username}`;
-                
-                if (channelName !== expectedChannelName) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('🚫 Wrong Channel!')
-                        .setDescription('You can only gamble in your private gambling room!')
-                        .setColor('#FF0000')
-                        .addFields(
-                            { name: '🎰 How to get your gambling room:', value: '1. Go to **✅ start-gambling** channel\n2. Click **🎰 Create Gambling Room**\n3. Use gambling commands in your private room', inline: false }
-                        );
-                    
-                    try {
-                        await interaction.reply({ embeds: [embed], ephemeral: true });
-                    } catch (error) {
-                        console.error('Failed to send gambling room error:', error);
-                    }
-                    return;
+                if (!ensureInGamblingRoom(interaction, interaction.commandName)) {
+                    return; // Early return if not in gambling room
                 }
             }
 
@@ -244,29 +275,8 @@ client.on(Events.InteractionCreate, async interaction => {
             // Check if gambling button interactions are used in proper gambling channel
             const gamblingGames = ['mines', 'towers', 'crash', 'slots'];
             if (gamblingGames.includes(game)) {
-                const channelName = interaction.channel.name;
-                const username = interaction.user.username.toLowerCase();
-                const expectedChannelName = `gambling-${username}`;
-                
-                if (channelName !== expectedChannelName) {
-                    const embed = new EmbedBuilder()
-                        .setTitle('🚫 Wrong Channel!')
-                        .setDescription('You can only gamble in your private gambling room!')
-                        .setColor('#FF0000')
-                        .addFields(
-                            { name: '🎰 How to get your gambling room:', value: '1. Go to **✅ start-gambling** channel\n2. Click **🎰 Create Gambling Room**\n3. Use gambling commands in your private room', inline: false }
-                        );
-                    
-                    try {
-                        if (!interaction.replied && !interaction.deferred) {
-                            await interaction.reply({ embeds: [embed], ephemeral: true });
-                        } else {
-                            await interaction.followUp({ embeds: [embed], ephemeral: true });
-                        }
-                    } catch (error) {
-                        console.error('Failed to send gambling room error for button:', error);
-                    }
-                    return;
+                if (!ensureInGamblingRoom(interaction, game)) {
+                    return; // Early return if not in gambling room
                 }
             }
             
@@ -280,7 +290,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 );
                 
                 if (existingChannel) {
-                    await interaction.reply({ content: `You already have a gambling room: ${existingChannel}`, flags: 64 });
+                    await interaction.reply({ content: `You already have a gambling room: ${existingChannel}`, ephemeral: true });
                     return;
                 }
                 
@@ -290,7 +300,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 );
                 
                 if (!category) {
-                    await interaction.reply({ content: 'Gambling category not found. Please run `/setup` first.', flags: 64 });
+                    await interaction.reply({ content: 'Gambling category not found. Please run `/setup` first.', ephemeral: true });
                     return;
                 }
                 
@@ -329,7 +339,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setTimestamp();
                 
                 await gamblingChannel.send({ embeds: [welcomeEmbed] });
-                await interaction.reply({ content: `Your gambling room has been created: ${gamblingChannel}`, flags: 64 });
+                await interaction.reply({ content: `Your gambling room has been created: ${gamblingChannel}`, ephemeral: true });
                 return;
             }
             
