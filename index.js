@@ -77,9 +77,13 @@ client.on(Events.MessageCreate, async message => {
     
     // Check for ?bankset command
     if (message.content.startsWith('?bankset ')) {
-        // Check if user is the server owner
-        if (message.author.id !== process.env.SERVER_OWNER_ID) {
-            await message.reply('❌ Only the server owner can set the casino bank balance.');
+        // Check if user has administrator permissions or is bot owner
+        const { PermissionFlagsBits } = require('discord.js');
+        const isOwner = message.author.id === process.env.SERVER_OWNER_ID;
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        
+        if (!isOwner && !isAdmin) {
+            await message.reply('❌ Only administrators or the bot owner can set the casino bank balance.');
             return;
         }
         
@@ -111,9 +115,13 @@ client.on(Events.MessageCreate, async message => {
     
     // Check for ?reload command  
     else if (message.content.startsWith('?reload')) {
-        // Check if user is the server owner
-        if (message.author.id !== process.env.SERVER_OWNER_ID) {
-            await message.reply('❌ Only the server owner can reload commands.');
+        // Check if user has administrator permissions or is bot owner
+        const { PermissionFlagsBits } = require('discord.js');
+        const isOwner = message.author.id === process.env.SERVER_OWNER_ID;
+        const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
+        
+        if (!isOwner && !isAdmin) {
+            await message.reply('❌ Only administrators or the bot owner can reload commands.');
             return;
         }
         

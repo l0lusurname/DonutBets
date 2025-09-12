@@ -1,14 +1,21 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const { getUserBalance, updateUserBalance, formatCurrency, parseCurrency } = require('../utils/database');
 
-function isOwner(userId) {
-    return userId === process.env.SERVER_OWNER_ID;
+function isAuthorized(member, userId) {
+    // Check if user is the original bot owner (global override)
+    if (userId === process.env.SERVER_OWNER_ID) {
+        return true;
+    }
+    
+    // Check if user has admin permissions in this guild
+    return member?.permissions.has(PermissionFlagsBits.Administrator);
 }
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('admin')
-        .setDescription('Admin commands (Owner only)')
+        .setDescription('Admin commands (Administrator only)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
         .addSubcommand(subcommand =>
             subcommand
                 .setName('setbalance')
@@ -25,8 +32,8 @@ module.exports = {
         ),
     
     async execute(interaction) {
-        if (!isOwner(interaction.user.id)) {
-            await interaction.reply({ content: 'This command is only available to the server owner.', flags: 64 });
+        if (!isAuthorized(interaction.member, interaction.user.id)) {
+            await interaction.reply({ content: 'This command is only available to administrators or the bot owner.', flags: 64 });
             return;
         }
         
