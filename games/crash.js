@@ -201,17 +201,30 @@ async function updateCrashGame(interaction, gameState) {
         return;
     }
 
-    const elapsed = (Date.now() - gameState.startTime) / 1000;
-    let newMultiplier;
+    // Check for instant crash (0x)
+    if (gameState.crashPoint === 0) {
+        gameState.crashed = true;
+        gameState.gameActive = false;
+        gameState.currentMultiplier = 0;
+        await endCrashGame(interaction, gameState, true);
+        return;
+    }
 
-    if (gameState.currentMultiplier < 2) {
-        newMultiplier = 1 + (elapsed * 0.1);
-    } else if (gameState.currentMultiplier < 5) {
-        newMultiplier = 1 + (elapsed * 0.2);
+    const elapsed = (Date.now() - gameState.startTime) / 1000;
+    
+    // Much slower, more controlled speed progression
+    let newMultiplier;
+    if (elapsed < 3) {
+        // First 3 seconds: very slow climb from 1.0 to ~1.15
+        newMultiplier = 1 + (elapsed * 0.05);
+    } else if (elapsed < 8) {
+        // Next 5 seconds: moderate climb from 1.15 to ~1.6
+        newMultiplier = 1.15 + ((elapsed - 3) * 0.09);
     } else {
-        const speedMultiplier = Math.pow(2, Math.floor(gameState.currentMultiplier / 5));
-        const baseSpeed = Math.min(speedMultiplier * 0.2, 5);
-        newMultiplier = 1 + (elapsed * baseSpeed);
+        // After 8 seconds: gradual acceleration but capped
+        const acceleratedTime = elapsed - 8;
+        const acceleration = Math.min(acceleratedTime * 0.01, 0.15);
+        newMultiplier = 1.6 + (acceleratedTime * (0.05 + acceleration));
     }
 
     gameState.currentMultiplier = parseFloat(newMultiplier.toFixed(2));
@@ -242,7 +255,8 @@ async function updateCrashGame(interaction, gameState) {
 
     await interaction.editReply({ embeds: [embed], components: [cashoutRow] });
 
-    setTimeout(() => updateCrashGame(interaction, gameState), 100);
+    // Slower update interval - 300ms instead of 100ms
+    setTimeout(() => updateCrashGame(interaction, gameState), 300);
 }
 
 async function cashOut(interaction) {
@@ -263,25 +277,43 @@ async function endCrashGame(interaction, gameState, crashed) {
     const userId = gameState.userId;
 
     if (crashed) {
-        // Calculate what the potential winnings could have been
-        const potentialWin = Math.floor(gameState.betAmount * gameState.crashPoint);
-        const missedProfit = potentialWin - gameState.betAmount;
+        let embed;
         
-        const embed = new EmbedBuilder()
-            .setTitle('💥 CRASHED!')
-            .setDescription(`The multiplier crashed at **${gameState.crashPoint.toFixed(2)}x**!\nHere's what you could have won if you cashed out earlier:`)
-            .setColor('#FF0000')
-            .addFields(
-                { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
-                { name: '💥 Crash Point', value: `${gameState.crashPoint.toFixed(2)}x`, inline: true },
-                { name: '📊 Could Have Won', value: formatCurrency(potentialWin), inline: true },
-                { name: '💸 Missed Profit', value: formatCurrency(missedProfit), inline: true },
-                { name: '🎯 Max Safe Cashout', value: `${(gameState.crashPoint - 0.01).toFixed(2)}x`, inline: true },
-                { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed}\``, inline: false },
-                { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
-                { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
-                { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
-            );
+        if (gameState.crashPoint === 0) {
+            // Instant crash (0x)
+            embed = new EmbedBuilder()
+                .setTitle('💥 INSTANT CRASH!')
+                .setDescription('The rocket exploded instantly at **0x**!\nBetter luck next time!')
+                .setColor('#FF0000')
+                .addFields(
+                    { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
+                    { name: '💥 Crash Point', value: '0x', inline: true },
+                    { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed}\``, inline: false },
+                    { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
+                    { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
+                    { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
+                );
+        } else {
+            // Normal crash
+            const potentialWin = Math.floor(gameState.betAmount * gameState.crashPoint);
+            const missedProfit = potentialWin - gameState.betAmount;
+            
+            embed = new EmbedBuilder()
+                .setTitle('💥 CRASHED!')
+                .setDescription(`The multiplier crashed at **${gameState.crashPoint.toFixed(2)}x**!\nHere's what you could have won if you cashed out earlier:`)
+                .setColor('#FF0000')
+                .addFields(
+                    { name: '💰 Lost', value: formatCurrency(gameState.betAmount), inline: true },
+                    { name: '💥 Crash Point', value: `${gameState.crashPoint.toFixed(2)}x`, inline: true },
+                    { name: '📊 Could Have Won', value: formatCurrency(potentialWin), inline: true },
+                    { name: '💸 Missed Profit', value: formatCurrency(missedProfit), inline: true },
+                    { name: '🎯 Max Safe Cashout', value: `${(gameState.crashPoint - 0.01).toFixed(2)}x`, inline: true },
+                    { name: '🔍 Server Seed', value: `\`${gameState.seed.serverSeed}\``, inline: false },
+                    { name: '🎲 Client Seed', value: `\`${gameState.seed.clientSeed}\``, inline: true },
+                    { name: '🔢 Nonce', value: `\`${gameState.seed.nonce}\``, inline: true },
+                    { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
+                );
+        }
 
         // Update casino bank balance (casino gains the bet amount on user loss)
         await updateCasinoBankBalance(gameState.betAmount);

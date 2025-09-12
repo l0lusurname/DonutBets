@@ -151,26 +151,24 @@ async function generateCrashMultiplier(seed, houseEdge = null) {
         houseEdge = settings.house_edge;
     }
     
-    // Very aggressive distribution to keep crashes very low
-    // Most crashes should be between 1.2x - 3x with heavy bias toward 1.5x-2x
-    
-    // Transform random to heavily favor very low crashes
-    let adjustedRandom;
-    if (random < 0.7) {
-        // 70% chance of crash between 1.2x - 2x
-        adjustedRandom = 0.17 + (random / 0.7) * 0.3;
-    } else if (random < 0.9) {
-        // 20% chance of crash between 2x - 3x  
-        adjustedRandom = 0.47 + ((random - 0.7) / 0.2) * 0.16;
+    // Distribution: 5% instant crash (0x), 75% between 1.2-1.6x, 15% between 1.6-2x, 5% above 2x
+    if (random < 0.05) {
+        // 5% chance of instant crash (0x)
+        return 0;
+    } else if (random < 0.8) {
+        // 75% chance between 1.2x - 1.6x
+        const normalizedRandom = (random - 0.05) / 0.75;
+        return Math.floor((1.2 + normalizedRandom * 0.4) * 100) / 100;
+    } else if (random < 0.95) {
+        // 15% chance between 1.6x - 2x
+        const normalizedRandom = (random - 0.8) / 0.15;
+        return Math.floor((1.6 + normalizedRandom * 0.4) * 100) / 100;
     } else {
-        // 10% chance of higher crashes up to 10x
-        adjustedRandom = 0.63 + ((random - 0.9) / 0.1) * 0.27;
-    }
-    
-    const crashPoint = Math.floor((1 / (1 - adjustedRandom * (1 - houseEdge))) * 100) / 100;
-    
-    // Cap maximum crash at 10x and ensure minimum is 1.2x
-    return Math.max(1.2, Math.min(10, crashPoint));
+        // 5% chance above 2x (rare, up to 10x)
+        const normalizedRandom = (random - 0.95) / 0.05;
+        const exponentialValue = Math.pow(normalizedRandom, 2); // Makes higher values much rarer
+        return Math.floor((2 + exponentialValue * 8) * 100) / 100;
+    }n(10, crashPoint));
 }
 
 // Calculate Mines multipliers using exact mathematical specification
