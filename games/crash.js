@@ -174,26 +174,7 @@ async function startCrashGame(interaction, betAmount) {
         return;
     }
 
-    // Safety check: validate bet amount against max bet limit
-    const maxBet = await getMaxBetAmount();
-    if (betAmount > maxBet) {
-        await interaction.editReply({ 
-            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
-            components: [] 
-        });
-        return;
-    }
-
-    // Safety check: validate potential max payout for crash game
-    const maxMultiplier = 10; // Max crash multiplier is 10x
-    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
-    if (!validation.isValid) {
-        await interaction.editReply({ 
-            content: `❌ ${validation.reasons.join(', ')}`, 
-            components: [] 
-        });
-        return;
-    }
+    // Bank balance validation removed - no more bet limits!
 
     const seed = generateSeed();
     const crashPoint = generateCrashMultiplier(seed);

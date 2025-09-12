@@ -179,26 +179,7 @@ async function playSlots(interaction, betAmount) {
         return;
     }
 
-    // Safety check: validate bet amount against max bet limit
-    const maxBet = await getMaxBetAmount();
-    if (betAmount > maxBet) {
-        await interaction.editReply({ 
-            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
-            components: [] 
-        });
-        return;
-    }
-
-    // Safety check: validate potential max payout for slots
-    const maxMultiplier = 5; // Max slots multiplier is 5x (center 7 jackpot)
-    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
-    if (!validation.isValid) {
-        await interaction.editReply({ 
-            content: `❌ ${validation.reasons.join(', ')}`, 
-            components: [] 
-        });
-        return;
-    }
+    // Bank balance validation removed - no more bet limits!
     
     const seed = generateSeed();
     const results = generateSlotResults(seed);
