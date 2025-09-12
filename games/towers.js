@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout, updateCasinoBankBalance } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, updateCasinoBankBalance } = require('../utils/database');
 const { generateSeed, generateTowersResults } = require('../utils/provablyFair');
 const crypto = require('crypto');
 
@@ -71,9 +71,9 @@ async function startGame(interaction) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
 
-    if (balance < 100) {
+    if (balance < 1000) {
         const reply = {
-            content: 'You need at least 100 credits to play Towers!',
+            content: 'You need at least 1K credits to play Towers!',
             flags: 64
         };
 
@@ -158,8 +158,8 @@ async function handleCustomBet(interaction) {
         const betInput = message.content.split(' ')[1];
         const betAmount = parseFormattedNumber(betInput);
 
-        if (isNaN(betAmount) || betAmount < 100) {
-            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
+        if (isNaN(betAmount) || betAmount < 1000) {
+            await message.reply('Invalid bet amount! Minimum bet is 1K credits.');
             return;
         }
 
@@ -273,29 +273,7 @@ async function setupGame(interaction, betAmount, difficulty) {
         return;
     }
 
-    // Safety check: validate bet amount against max bet limit
-    const maxBet = await getMaxBetAmount();
-    if (betAmount > maxBet) {
-        await interaction.editReply({ 
-            content: `❌ Bet amount exceeds maximum allowed (${formatCurrency(maxBet)}). This is 5% of the casino's bank balance for safety.`, 
-            components: [] 
-        });
-        return;
-    }
-
-    // Safety check: validate potential max payout for this tower configuration
-    const { calculateTowerMultiplier } = require('../utils/provablyFair');
-    const maxFloors = 8; // Maximum floors in towers game
-    const maxMultiplier = await calculateTowerMultiplier(difficulty, maxFloors - 1);
-    
-    const validation = await validateBetAndPayout(betAmount, maxMultiplier);
-    if (!validation.isValid) {
-        await interaction.editReply({ 
-            content: `❌ ${validation.reasons.join(', ')}`, 
-            components: [] 
-        });
-        return;
-    }
+    // Bank balance validation removed - no more bet limits!
 
     let blocksPerLevel;
     switch (difficulty) {

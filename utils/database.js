@@ -271,49 +271,7 @@ async function getCasinoSettings() {
     }
 }
 
-// Calculate maximum allowed bet based on house balance
-async function getMaxBetAmount() {
-    try {
-        const settings = await getCasinoSettings();
-        return Math.floor(settings.bank_balance * settings.max_bet_percentage);
-    } catch (error) {
-        console.error('Error calculating max bet:', error);
-        return 500000; // Fallback 500K
-    }
-}
-
-// Validate bet amount and potential payout
-async function validateBetAndPayout(betAmount, potentialMultiplier) {
-    try {
-        const settings = await getCasinoSettings();
-        const maxBet = Math.floor(settings.bank_balance * settings.max_bet_percentage);
-        const potentialPayout = betAmount * potentialMultiplier;
-        const maxAllowedPayout = Math.min(
-            settings.payout_cap * betAmount,
-            settings.bank_balance * 0.9
-        );
-        
-        const validation = {
-            isValid: true,
-            reasons: []
-        };
-        
-        if (betAmount > maxBet) {
-            validation.isValid = false;
-            validation.reasons.push(`Bet exceeds maximum (${formatCurrency(maxBet)})`);
-        }
-        
-        if (potentialPayout > maxAllowedPayout) {
-            validation.isValid = false;
-            validation.reasons.push(`Potential payout too high (max: ${formatCurrency(maxAllowedPayout)})`);
-        }
-        
-        return validation;
-    } catch (error) {
-        console.error('Error validating bet:', error);
-        return { isValid: false, reasons: ['Validation error'] };
-    }
-}
+// Bank balance validation removed - no more payout limits!
 
 module.exports = {
     supabase,
@@ -330,6 +288,4 @@ module.exports = {
     setCasinoBankBalance,
     updateCasinoBankBalance,
     getCasinoSettings,
-    getMaxBetAmount,
-    validateBetAndPayout
 };

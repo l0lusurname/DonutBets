@@ -1,5 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { getUserBalance, updateUserBalance, logGame, formatCurrency, getMaxBetAmount, validateBetAndPayout, updateCasinoBankBalance } = require('../utils/database');
+const { getUserBalance, updateUserBalance, logGame, formatCurrency, updateCasinoBankBalance } = require('../utils/database');
 const { generateSeed, generateCrashMultiplier } = require('../utils/provablyFair');
 
 const activeGames = new Map();
@@ -57,9 +57,9 @@ async function startGame(interaction) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
 
-    if (balance < 100) {
+    if (balance < 1000) {
         const reply = {
-            content: 'You need at least 100 credits to play Crash!',
+            content: 'You need at least 1K credits to play Crash!',
             flags: 64
         };
 
@@ -113,7 +113,7 @@ async function handleCustomBet(interaction) {
         .setColor('#FFD700')
         .addFields(
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
-            { name: '💡 Tip', value: 'Minimum bet: 100 credits\nSupports: k, m, b suffixes', inline: true }
+            { name: '💡 Tip', value: 'Minimum bet: 1K credits\nSupports: k, m, b suffixes', inline: true }
         );
 
     const backRow = new ActionRowBuilder()
@@ -133,8 +133,8 @@ async function handleCustomBet(interaction) {
         const betInput = message.content.split(' ')[1];
         const betAmount = parseFormattedNumber(betInput);
 
-        if (isNaN(betAmount) || betAmount < 100) {
-            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
+        if (isNaN(betAmount) || betAmount < 1000) {
+            await message.reply('Invalid bet amount! Minimum bet is 1K credits.');
             return;
         }
 
