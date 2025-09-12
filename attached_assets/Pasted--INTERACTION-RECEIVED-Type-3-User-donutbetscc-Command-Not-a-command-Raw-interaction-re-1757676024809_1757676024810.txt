@@ -1,0 +1,121 @@
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
