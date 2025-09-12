@@ -203,10 +203,12 @@ client.on(Events.InteractionCreate, async interaction => {
         
         // Handle button interactions
         else if (interaction.isButton()) {
+            console.log('Button clicked:', interaction.customId);
             const [game, action, ...params] = interaction.customId.split('_');
+            console.log('Parsed button:', { game, action, params });
             
             // Ensure user exists in database before processing
-            await ensureUserExists(interaction.user.id);
+            await ensureUserExists(interaction.user.id, interaction.user.username);
             
             // Handle gambling room creation
             if (game === 'gambling' && action === 'create' && params[0] === 'room') {
