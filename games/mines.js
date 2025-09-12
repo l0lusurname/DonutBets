@@ -163,28 +163,47 @@ async function handleCustomBet(interaction) {
     const collector = interaction.channel.createMessageCollector({ filter, time: 30000, max: 1 });
 
     collector.on('collect', async (message) => {
-        const betInput = message.content.split(' ')[1];
-        const betAmount = parseFormattedNumber(betInput);
-
-        if (isNaN(betAmount) || betAmount < 100) {
-            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
-            return;
-        }
-
-        if (betAmount > balance) {
-            await message.reply('Insufficient balance!');
-            return;
-        }
-
         try {
-            const replyMsg = await message.reply(`Custom bet set: ${formatCurrency(betAmount)}!`);
-            setTimeout(() => replyMsg.delete().catch(() => {}), 3000);
-            await message.delete().catch(() => {});
-        } catch (error) {
-            console.log('Message interaction error:', error.message);
-        }
+            const betInput = message.content.split(' ')[1];
+            console.log('Custom bet input:', betInput);
+            
+            if (!betInput) {
+                await message.reply('Please specify a bet amount! Example: `!bet 99k`');
+                return;
+            }
+            
+            const betAmount = parseFormattedNumber(betInput);
+            console.log('Parsed bet amount:', betAmount);
 
-        await handleBetSelection(interaction, betAmount);
+            if (isNaN(betAmount) || betAmount < 100) {
+                await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
+                return;
+            }
+
+            // Check current balance again to ensure it's up to date
+            const currentBalance = await getUserBalance(message.author.id);
+            if (betAmount > currentBalance) {
+                await message.reply(`Insufficient balance! You have ${formatCurrency(currentBalance)}, but tried to bet ${formatCurrency(betAmount)}`);
+                return;
+            }
+
+            try {
+                const replyMsg = await message.reply(`Custom bet set: ${formatCurrency(betAmount)}!`);
+                setTimeout(() => replyMsg.delete().catch(() => {}), 3000);
+                await message.delete().catch(() => {});
+            } catch (error) {
+                console.log('Message interaction error:', error.message);
+            }
+
+            await handleBetSelection(interaction, betAmount);
+        } catch (error) {
+            console.error('Custom bet collection error:', error);
+            try {
+                await message.reply('❌ Error processing custom bet. Please try again.');
+            } catch (replyError) {
+                console.error('Failed to send error reply:', replyError);
+            }
+        }
     });
 
     collector.on('end', (collected, reason) => {
