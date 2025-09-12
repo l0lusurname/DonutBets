@@ -211,7 +211,7 @@ async function updateCrashGame(interaction, gameState) {
     }
 
     const elapsed = (Date.now() - gameState.startTime) / 1000;
-    
+
     // Much slower, more controlled speed progression
     let newMultiplier;
     if (elapsed < 3) {
@@ -278,7 +278,7 @@ async function endCrashGame(interaction, gameState, crashed) {
 
     if (crashed) {
         let embed;
-        
+
         if (gameState.crashPoint === 0) {
             // Instant crash (0x)
             embed = new EmbedBuilder()
@@ -297,7 +297,7 @@ async function endCrashGame(interaction, gameState, crashed) {
             // Normal crash
             const potentialWin = Math.floor(gameState.betAmount * gameState.crashPoint);
             const missedProfit = potentialWin - gameState.betAmount;
-            
+
             embed = new EmbedBuilder()
                 .setTitle('💥 CRASHED!')
                 .setDescription(`The multiplier crashed at **${gameState.crashPoint.toFixed(2)}x**!\nHere's what you could have won if you cashed out earlier:`)
@@ -317,7 +317,7 @@ async function endCrashGame(interaction, gameState, crashed) {
 
         // Update casino bank balance (casino gains the bet amount on user loss)
         await updateCasinoBankBalance(gameState.betAmount);
-        
+
         await logGame(userId, 'Crash', gameState.betAmount, 'Loss', 0, -gameState.betAmount, gameState.seed.hash);
 
         const newGameRow = new ActionRowBuilder()
@@ -335,7 +335,7 @@ async function endCrashGame(interaction, gameState, crashed) {
         const currentBalance = await getUserBalance(userId);
 
         await updateUserBalance(userId, currentBalance + winAmount);
-        
+
         // Update casino bank balance (opposite of user's profit/loss)
         await updateCasinoBankBalance(-profit);
 

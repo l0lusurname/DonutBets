@@ -151,24 +151,25 @@ async function generateCrashMultiplier(seed, houseEdge = null) {
         houseEdge = settings.house_edge;
     }
     
-    // Distribution: 5% instant crash (0x), 75% between 1.2-1.6x, 15% between 1.6-2x, 5% above 2x
-    if (random < 0.05) {
-        // 5% chance of instant crash (0x)
+    // New distribution: 10% instant crash (0x), 70% between 1.2-1.6x (normal), 15% between 1.6-2x, 5% above 2x (rare)
+    if (random < 0.1) {
+        // 10% chance of instant crash (0x) - "sometimes"
         return 0;
     } else if (random < 0.8) {
-        // 75% chance between 1.2x - 1.6x
-        const normalizedRandom = (random - 0.05) / 0.75;
+        // 70% chance between 1.2x - 1.6x (normal range)
+        const normalizedRandom = (random - 0.1) / 0.7;
         return Math.floor((1.2 + normalizedRandom * 0.4) * 100) / 100;
     } else if (random < 0.95) {
         // 15% chance between 1.6x - 2x
         const normalizedRandom = (random - 0.8) / 0.15;
         return Math.floor((1.6 + normalizedRandom * 0.4) * 100) / 100;
     } else {
-        // 5% chance above 2x (rare, up to 10x)
+        // 5% chance above 2x (rare, up to 5x max to prevent huge jumps)
         const normalizedRandom = (random - 0.95) / 0.05;
-        const exponentialValue = Math.pow(normalizedRandom, 2); // Makes higher values much rarer
-        return Math.floor((2 + exponentialValue * 8) * 100) / 100;
-    }n(10, crashPoint));
+        const exponentialValue = Math.pow(normalizedRandom, 3); // Makes higher values even rarer
+        const crashPoint = Math.floor((2 + exponentialValue * 3) * 100) / 100;
+        return Math.min(5, crashPoint);
+    }
 }
 
 // Calculate Mines multipliers using exact mathematical specification
