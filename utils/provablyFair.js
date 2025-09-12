@@ -151,24 +151,24 @@ async function generateCrashMultiplier(seed, houseEdge = null) {
         houseEdge = settings.house_edge;
     }
     
-    // New distribution: 10% instant crash (0x), 70% between 1.2-1.6x (normal), 15% between 1.6-2x, 5% above 2x (rare)
-    if (random < 0.1) {
-        // 10% chance of instant crash (0x) - "sometimes"
+    // Updated distribution: 30% instant crash (0x), 50% between 1.3-1.5x (usual), 15% between 1.5-2x (lucky), 5% above 2x (super lucky)
+    if (random < 0.3) {
+        // 30% chance of instant crash (0x) - happens often
         return 0;
     } else if (random < 0.8) {
-        // 70% chance between 1.2x - 1.6x (normal range)
-        const normalizedRandom = (random - 0.1) / 0.7;
-        return Math.floor((1.2 + normalizedRandom * 0.4) * 100) / 100;
+        // 50% chance between 1.3x - 1.5x (usual range) 
+        const normalizedRandom = (random - 0.3) / 0.5;
+        return Math.floor((1.3 + normalizedRandom * 0.2) * 100) / 100;
     } else if (random < 0.95) {
-        // 15% chance between 1.6x - 2x
+        // 15% chance between 1.5x - 2x (lucky)
         const normalizedRandom = (random - 0.8) / 0.15;
-        return Math.floor((1.6 + normalizedRandom * 0.4) * 100) / 100;
+        return Math.floor((1.5 + normalizedRandom * 0.5) * 100) / 100;
     } else {
-        // 5% chance above 2x (rare, up to 5x max to prevent huge jumps)
+        // 5% chance above 2x (super lucky, up to 4x max)
         const normalizedRandom = (random - 0.95) / 0.05;
-        const exponentialValue = Math.pow(normalizedRandom, 3); // Makes higher values even rarer
-        const crashPoint = Math.floor((2 + exponentialValue * 3) * 100) / 100;
-        return Math.min(5, crashPoint);
+        const exponentialValue = Math.pow(normalizedRandom, 2); // Makes higher values rarer
+        const crashPoint = Math.floor((2 + exponentialValue * 2) * 100) / 100;
+        return Math.min(4, crashPoint);
     }
 }
 
