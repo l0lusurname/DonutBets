@@ -1,0 +1,67 @@
+Command: Not a command
+Button clicked: crash_bet_100
+Parsed button: { game: 'crash', action: 'bet', params: [ '100' ] }
+🎲 NEW CRASH GAME - Crash Point: [object Promise]x
+🚀 Current: 1x -> New: 1.01x | Crash at: [object Promise]x
+🚀 Current: 1.01x -> New: 1.03x | Crash at: [object Promise]x
+🚀 Current: 1.03x -> New: 1.07x | Crash at: [object Promise]x
+🚀 Current: 1.07x -> New: 1.09x | Crash at: [object Promise]x
+🚀 Current: 1.09x -> New: 1.12x | Crash at: [object Promise]x
+🚀 Current: 1.12x -> New: 1.15x | Crash at: [object Promise]x
+🚀 Current: 1.15x -> New: 1.19x | Crash at: [object Promise]x
+🚀 Current: 1.19x -> New: 1.24x | Crash at: [object Promise]x
+🚀 Current: 1.24x -> New: 1.29x | Crash at: [object Promise]x
+🚀 Current: 1.29x -> New: 1.33x | Crash at: [object Promise]x
+🚀 Current: 1.33x -> New: 1.39x | Crash at: [object Promise]x
+🚀 Current: 1.39x -> New: 1.45x | Crash at: [object Promise]x
+🚀 Current: 1.45x -> New: 1.52x | Crash at: [object Promise]x
+🚀 Current: 1.52x -> New: 1.58x | Crash at: [object Promise]x
+🚀 Current: 1.58x -> New: 1.62x | Crash at: [object Promise]x
+🚀 Current: 1.62x -> New: 1.66x | Crash at: [object Promise]x
+🚀 Current: 1.66x -> New: 1.72x | Crash at: [object Promise]x
+🚀 Current: 1.72x -> New: 1.76x | Crash at: [object Promise]x
+🚀 Current: 1.76x -> New: 1.82x | Crash at: [object Promise]x
+🚀 Current: 1.82x -> New: 1.88x | Crash at: [object Promise]x
+🚀 Current: 1.88x -> New: 1.97x | Crash at: [object Promise]x
+🚀 Current: 1.97x -> New: 2.1x | Crash at: [object Promise]x
+🚀 Current: 2.1x -> New: 2.2x | Crash at: [object Promise]x
+🚀 Current: 2.2x -> New: 2.33x | Crash at: [object Promise]x
+🚀 Current: 2.33x -> New: 2.46x | Crash at: [object Promise]x
+🚀 Current: 2.46x -> New: 2.99x | Crash at: [object Promise]x
+🚀 Current: 2.99x -> New: 3.12x | Crash at: [object Promise]x
+🚀 Current: 3.12x -> New: 3.86x | Crash at: [object Promise]x
+🚀 Current: 3.86x -> New: 4.03x | Crash at: [object Promise]x
+🚀 Current: 4.03x -> New: 4.24x | Crash at: [object Promise]x
+🚀 Current: 4.24x -> New: 4.43x | Crash at: [object Promise]x
+🚀 Current: 4.43x -> New: 4.61x | Crash at: [object Promise]x
+🚀 Current: 4.61x -> New: 4.82x | Crash at: [object Promise]x
+🚀 Current: 4.82x -> New: 4.94x | Crash at: [object Promise]x
+🚀 Current: 4.94x -> New: 5.06x | Crash at: [object Promise]x
+🚀 Current: 5.06x -> New: 5.17x | Crash at: [object Promise]x
+🚀 Current: 5.17x -> New: 5.28x | Crash at: [object Promise]x
+🚀 Current: 5.28x -> New: 5.42x | Crash at: [object Promise]x
+🚀 Current: 5.42x -> New: 5.55x | Crash at: [object Promise]x
+🚀 Current: 5.55x -> New: 5.68x | Crash at: [object Promise]x
+🚀 Current: 5.68x -> New: 5.79x | Crash at: [object Promise]x
+🚀 Current: 5.79x -> New: 5.9x | Crash at: [object Promise]x
+🚀 Current: 5.9x -> New: 6x | Crash at: [object Promise]x
+🚀 Current: 6x -> New: 6.11x | Crash at: [object Promise]x
+🚀 Current: 6.11x -> New: 6.29x | Crash at: [object Promise]x
+🚀 Current: 6.29x -> New: 6.45x | Crash at: [object Promise]x
+🚀 Current: 6.45x -> New: 6.56x | Crash at: [object Promise]x
+🚀 Current: 6.56x -> New: 6.67x | Crash at: [object Promise]x
+🚀 Current: 6.67x -> New: 6.78x | Crash at: [object Promise]x
+🚀 Current: 6.78x -> New: 6.93x | Crash at: [object Promise]x
+🚀 Current: 6.93x -> New: 7.38x | Crash at: [object Promise]x
+🚀 Current: 7.38x -> New: 7.52x | Crash at: [object Promise]x
+🚀 Current: 7.52x -> New: 7.64x | Crash at: [object Promise]x
+🚀 Current: 7.64x -> New: 7.79x | Crash at: [object Promise]x
+🚀 Current: 7.79x -> New: 7.9x | Crash at: [object Promise]x
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: donutbetscc
+Command: Not a command
+Button clicked: crash_cashout
+Parsed button: { game: 'crash', action: 'cashout', params: [] }
+🚀 Current: 7.9x -> New: 8.07x | Crash at: [object Promise]x
