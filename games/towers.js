@@ -55,16 +55,11 @@ function parseFormattedNumber(input) {
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
-    console.log(`[TOWERS DEBUG] handleButton called for ${interaction.user.username} (${interaction.user.id}) - action: ${action}`);
 
     try {
         // Handle interaction deferral consistently
         if (!interaction.deferred && !interaction.replied) {
-            console.log(`[TOWERS DEBUG] Deferring interaction for ${interaction.user.username}`);
             await interaction.deferUpdate();
-            console.log(`[TOWERS DEBUG] Successfully deferred for ${interaction.user.username}`);
-        } else {
-            console.log(`[TOWERS DEBUG] Interaction already deferred/replied for ${interaction.user.username}: deferred=${interaction.deferred}, replied=${interaction.replied}`);
         }
 
         switch (action) {
@@ -82,16 +77,11 @@ async function handleButton(interaction, params) {
                 await handleDifficultySelection(interaction, data[0]);
                 break;
             case 'game':
-                console.log(`[TOWERS DEBUG] Starting game case for ${interaction.user.username}`);
                 const userId = interaction.user.id;
                 const gameState = activeGames.get(userId);
-                console.log(`[TOWERS DEBUG] gameState for ${interaction.user.username}:`, JSON.stringify(gameState));
                 if (gameState && gameState.betAmount && gameState.difficulty) {
-                    console.log(`[TOWERS DEBUG] Valid state for ${interaction.user.username}, calling setupGame...`);
                     await setupGame(interaction, gameState.betAmount, gameState.difficulty);
-                    console.log(`[TOWERS DEBUG] setupGame completed for ${interaction.user.username}`);
                 } else {
-                    console.log(`[TOWERS DEBUG] Invalid state for ${interaction.user.username}, showing error`);
                     // Keep the selection UI and show an error message
                     await interaction.followUp({ 
                         content: 'Please select both a bet amount and difficulty before starting the game!', 
@@ -332,10 +322,19 @@ async function updateSelectionDisplay(interaction, gameState) {
 
 async function setupGame(interaction, betAmount, difficulty) {
     const userId = interaction.user.id;
-    const balance = await getUserBalance(userId);
+    let balance = await getUserBalance(userId);
+
+    // Give users starting balance if they have 0
+    if (balance === 0) {
+        await updateUserBalance(userId, 10000);
+        balance = 10000;
+    }
 
     if (balance < betAmount) {
-        await interaction.editReply({ content: 'Insufficient balance!', components: [] });
+        await interaction.editReply({ 
+            content: `Insufficient balance! You have ${formatCurrency(balance)} but need ${formatCurrency(betAmount)}. Use \`/deposit\` to add credits.`, 
+            components: [] 
+        });
         return;
     }
 

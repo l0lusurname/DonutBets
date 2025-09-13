@@ -349,11 +349,8 @@ client.on(Events.InteractionCreate, async interaction => {
                     await minesHandler.handleButton(interaction, [action, ...params]);
                     break;
                 case 'towers':
-                    console.log(`[INDEX DEBUG] Routing towers button for ${interaction.user.username}: ${action}`);
                     const towersHandler = require('./games/towers');
-                    console.log(`[INDEX DEBUG] Calling towers handler...`);
                     await towersHandler.handleButton(interaction, [action, ...params]);
-                    console.log(`[INDEX DEBUG] Towers handler completed for ${interaction.user.username}`);
                     break;
                 case 'slots':
                     const slotsHandler = require('./games/slots');
