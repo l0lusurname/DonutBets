@@ -151,17 +151,17 @@ async function generateCrashMultiplier(seed, houseEdge = null) {
         houseEdge = settings.house_edge;
     }
 
-    // Updated distribution: 30% instant crash (0x), 50% between 1.3-1.5x (usual), 15% between 1.5-2x (lucky), 5% above 2x (super lucky)
-    if (random < 0.3) {
-        // 30% chance of instant crash (0x) - happens often
+    // Updated distribution: 15% instant crash (0x), 60% between 1.3-1.5x (usual), 20% between 1.5-2x (lucky), 5% above 2x (super lucky)
+    if (random < 0.15) {
+        // 15% chance of instant crash (0x) - reduced from 30%
         return 0;
-    } else if (random < 0.8) {
-        // 50% chance between 1.3x - 1.5x (usual range) 
-        const normalizedRandom = (random - 0.3) / 0.5;
+    } else if (random < 0.75) {
+        // 60% chance between 1.3x - 1.5x (usual range) 
+        const normalizedRandom = (random - 0.15) / 0.6;
         return Math.floor((1.3 + normalizedRandom * 0.2) * 100) / 100;
     } else if (random < 0.95) {
-        // 15% chance between 1.5x - 2x (lucky)
-        const normalizedRandom = (random - 0.8) / 0.15;
+        // 20% chance between 1.5x - 2x (lucky)
+        const normalizedRandom = (random - 0.75) / 0.2;
         return Math.floor((1.5 + normalizedRandom * 0.5) * 100) / 100;
     } else {
         // 5% chance above 2x (super lucky, up to 4x max)

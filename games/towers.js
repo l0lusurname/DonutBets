@@ -444,7 +444,7 @@ async function updateTowersBoard(interaction, gameState) {
     controlButtons.push(
         new ButtonBuilder()
             .setCustomId('towers_close')
-            .setLabel('🚪 Close Game')
+            .setLabel('🚪 Close Gambling Room')
             .setStyle(ButtonStyle.Danger)
     );
     

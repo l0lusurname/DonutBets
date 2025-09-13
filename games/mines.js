@@ -493,7 +493,7 @@ async function updateGameBoard(interaction, gameState) {
                 .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
                 .setCustomId('mines_close')
-                .setLabel('🚪 Close Game')
+                .setLabel('🚪 Close Gambling Room')
                 .setStyle(ButtonStyle.Danger)
         );
     rows.push(controlRow);

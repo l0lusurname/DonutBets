@@ -325,7 +325,7 @@ async function updateCrashGame(interaction, gameState) {
                 .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
                 .setCustomId('crash_close')
-                .setLabel('🚪 Close Game')
+                .setLabel('🚪 Close Gambling Room')
                 .setStyle(ButtonStyle.Danger)
         );
 
