@@ -1,14 +1,62 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
+// Parse formatted numbers with K/M/B support
+function parseFormattedNumber(input) {
+    if (typeof input === 'number') {
+        // Validate numeric input
+        if (!Number.isFinite(input) || input < 0 || input > 1000000000000) {
+            throw new Error('Invalid number: must be finite, positive, and within reasonable limits');
+        }
+        return Math.floor(input);
+    }
+
+    if (typeof input !== 'string' || input.trim() === '') {
+        throw new Error('Invalid input: must be a non-empty string or number');
+    }
+
+    // Clean and validate string input
+    const str = input.toString().toLowerCase().trim().replace(/,/g, '');
+    
+    // Reject dangerous patterns
+    if (str.includes('infinity') || str.includes('nan') || str.includes('e') || str.includes('script') || str.includes('\x00')) {
+        throw new Error('Invalid input: contains dangerous patterns');
+    }
+    
+    // Parse base number
+    const num = parseFloat(str);
+    
+    // Validate parsed number
+    if (!Number.isFinite(num) || num < 0) {
+        throw new Error('Invalid number: must be finite and positive');
+    }
+    
+    let result;
+    if (str.includes('k')) {
+        result = num * 1000;
+    } else if (str.includes('m')) {
+        result = num * 1000000;
+    } else if (str.includes('b')) {
+        result = num * 1000000000;
+    } else {
+        result = num;
+    }
+    
+    // Final validation and bounds checking
+    if (!Number.isFinite(result) || result < 1 || result > 1000000000000) {
+        throw new Error('Result out of bounds: must be between 1 and 1T');
+    }
+    
+    return Math.floor(result);
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('withdraw')
         .setDescription('Withdraw credits to your linked Minecraft account')
-        .addIntegerOption(option =>
+        .addStringOption(option =>
             option.setName('amount')
-                .setDescription('Amount to withdraw (in credits)')
-                .setRequired(true)
-                .setMinValue(1)),
+                .setDescription('Amount to withdraw (supports K/M/B format, e.g., 5K, 2.5M)')
+                .setRequired(true)),
     
     async execute(interaction) {
         const client = interaction.client;
@@ -20,7 +68,20 @@ module.exports = {
             await interaction.deferReply({ ephemeral: true });
 
             const userId = interaction.user.id;
-            const amount = interaction.options.getInteger('amount');
+            const amountInput = interaction.options.getString('amount');
+            
+            let amount;
+            try {
+                amount = parseFormattedNumber(amountInput);
+            } catch (error) {
+                const embed = new EmbedBuilder()
+                    .setColor('#ff6b35')
+                    .setTitle('❌ Invalid Amount')
+                    .setDescription('Please enter a valid amount. Examples: `1000`, `5K`, `2.5M`, `1B`')
+                    .setFooter({ text: 'Use K for thousands, M for millions, B for billions' });
+
+                return await interaction.editReply({ embeds: [embed] });
+            }
 
             // Ensure user exists in database
             await ensureUserExists(userId, interaction.user.username);
