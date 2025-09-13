@@ -183,7 +183,7 @@ module.exports = {
             await supabase
                 .from('linked_accounts')
                 .update({
-                    total_withdrawn_cents: supabase.sql`total_withdrawn_cents + ${amountCents}`,
+                    total_withdrawn_cents: (linkedAccount.total_withdrawn_cents || 0) + amountCents,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', linkedAccount.id);
