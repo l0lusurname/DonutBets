@@ -57,8 +57,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        // Don't defer for certain actions that need immediate response
-        if (action !== 'bet' && action !== 'difficulty' && !interaction.deferred && !interaction.replied) {
+        // Handle interaction deferral consistently
+        if (!interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 
@@ -81,6 +81,16 @@ async function handleButton(interaction, params) {
                 const gameState = activeGames.get(userId);
                 if (gameState && gameState.betAmount && gameState.difficulty) {
                     await setupGame(interaction, gameState.betAmount, gameState.difficulty);
+                } else {
+                    // Keep the selection UI and show an error message
+                    await interaction.followUp({ 
+                        content: 'Please select both a bet amount and difficulty before starting the game!', 
+                        ephemeral: true 
+                    });
+                    // Re-render the selection display if we have partial state
+                    if (gameState) {
+                        await updateSelectionDisplay(interaction, gameState);
+                    }
                 }
                 break;
             case 'tile':
@@ -239,11 +249,6 @@ async function handleBetSelection(interaction, betAmount) {
     let gameState = activeGames.get(userId) || {};
     gameState.betAmount = betAmount;
     activeGames.set(userId, gameState);
-
-    // Update interaction immediately for button clicks
-    if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferUpdate();
-    }
     
     // Always update selection display instead of auto-starting game
     await updateSelectionDisplay(interaction, gameState);
@@ -254,11 +259,6 @@ async function handleDifficultySelection(interaction, difficulty) {
     let gameState = activeGames.get(userId) || {};
     gameState.difficulty = difficulty;
     activeGames.set(userId, gameState);
-
-    // Update interaction immediately for button clicks
-    if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferUpdate();
-    }
     
     // Always update selection display instead of auto-starting game
     await updateSelectionDisplay(interaction, gameState);
@@ -323,11 +323,6 @@ async function updateSelectionDisplay(interaction, gameState) {
 async function setupGame(interaction, betAmount, difficulty) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
-
-    // Defer the interaction if not already done
-    if (!interaction.deferred && !interaction.replied) {
-        await interaction.deferUpdate();
-    }
 
     if (balance < betAmount) {
         await interaction.editReply({ content: 'Insufficient balance!', components: [] });
