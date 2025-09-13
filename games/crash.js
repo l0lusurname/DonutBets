@@ -212,7 +212,7 @@ async function startCrashGame(interaction, betAmount) {
     // Bank balance validation removed - no more bet limits!
 
     const seed = generateSeed();
-    const crashPoint = generateCrashMultiplier(seed);
+    const crashPoint = await generateCrashMultiplier(seed);
     
     console.log(`🎲 NEW CRASH GAME - Crash Point: ${crashPoint}x`);
 
