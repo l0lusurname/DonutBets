@@ -121,11 +121,22 @@ module.exports = {
                 throw new Error('Failed to create withdrawal record');
             }
 
+            // Get current user balance first
+            const { data: currentUserData, error: getCurrentError } = await supabase
+                .from('users')
+                .select('balance')
+                .eq('id', userId)
+                .single();
+
+            if (getCurrentError) {
+                throw new Error('Failed to get current balance');
+            }
+
             // Deduct balance immediately (amount is already in credits, not cents)
             const { error: balanceError } = await supabase
                 .from('users')
                 .update({ 
-                    balance: userData.balance - amount  // Simple subtraction
+                    balance: currentUserData.balance - amount  // Simple subtraction
                 })
                 .eq('id', userId);
 
@@ -142,7 +153,7 @@ module.exports = {
                 await supabase
                     .from('users')
                     .update({ 
-                        balance: userData.balance  // Restore original balance
+                        balance: currentUserData.balance  // Restore original balance
                     })
                     .eq('id', userId);
 

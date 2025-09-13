@@ -271,11 +271,12 @@ class MinecraftBot {
                 return;
             }
 
-            // Update user balance
+            // Update user balance (convert cents to credits: divide by 100)
+            const creditsToAdd = Math.floor(amountCents / 100);
             const { error: balanceError } = await this.supabase
                 .from('users')
                 .update({ 
-                    balance: currentUser.balance + amountCents
+                    balance: currentUser.balance + creditsToAdd
                 })
                 .eq('id', linkedAccount.discord_user_id);
 
