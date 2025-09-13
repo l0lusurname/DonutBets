@@ -250,19 +250,25 @@ async function updateCrashGame(interaction, gameState) {
 
     const elapsed = (Date.now() - gameState.startTime) / 1000;
 
-    // Much slower, more controlled speed progression
+    // Faster progression so crashes actually happen in reasonable time
     let newMultiplier;
-    if (elapsed < 3) {
-        // First 3 seconds: very slow climb from 1.0 to ~1.15
-        newMultiplier = 1 + (elapsed * 0.05);
-    } else if (elapsed < 8) {
-        // Next 5 seconds: moderate climb from 1.15 to ~1.6
-        newMultiplier = 1.15 + ((elapsed - 3) * 0.09);
+    if (elapsed < 2) {
+        // First 2 seconds: 1.0 to 1.2x
+        newMultiplier = 1 + (elapsed * 0.1);
+    } else if (elapsed < 5) {
+        // Next 3 seconds: 1.2 to 1.5x  
+        newMultiplier = 1.2 + ((elapsed - 2) * 0.1);
+    } else if (elapsed < 10) {
+        // Next 5 seconds: 1.5 to 2.0x
+        newMultiplier = 1.5 + ((elapsed - 5) * 0.1);
+    } else if (elapsed < 20) {
+        // Next 10 seconds: 2.0 to 3.0x
+        newMultiplier = 2.0 + ((elapsed - 10) * 0.1);
     } else {
-        // After 8 seconds: gradual acceleration but capped
-        const acceleratedTime = elapsed - 8;
-        const acceleration = Math.min(acceleratedTime * 0.01, 0.15);
-        newMultiplier = 1.6 + (acceleratedTime * (0.05 + acceleration));
+        // After 20 seconds: accelerating climb to higher multipliers
+        const acceleratedTime = elapsed - 20;
+        const acceleration = Math.min(acceleratedTime * 0.02, 0.3);
+        newMultiplier = 3.0 + (acceleratedTime * (0.05 + acceleration));
     }
 
     // Round to 2 decimal places for comparison
