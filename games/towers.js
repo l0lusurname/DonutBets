@@ -110,19 +110,6 @@ async function startGame(interaction) {
     const userId = interaction.user.id;
     
     // Check if user already has an active game
-    if (activeGames.has(userId)) {
-        const reply = {
-            content: '❌ You already have an active Towers game! Please finish or wait for your current game to end before starting a new one.',
-            flags: 64
-        };
-        
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(reply);
-        } else {
-            await interaction.reply(reply);
-        }
-        return;
-    }
     
     const balance = await getUserBalance(userId);
 
