@@ -19,7 +19,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        if (!interaction.deferred && !interaction.replied) {
+        // Ensure this is a button interaction and can be deferred
+        if (interaction.isButton && interaction.isButton() && !interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 

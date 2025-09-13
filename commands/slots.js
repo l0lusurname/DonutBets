@@ -7,6 +7,6 @@ module.exports = {
         .setDescription('Play the Slots minigame'),
     
     async execute(interaction) {
-        await slotsGame.handleButton(interaction, ['start']);
+        await slotsGame.startGame(interaction);
     }
 };

@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getUserBalance, updateUserBalance, logGame, formatCurrency, updateCasinoBankBalance } = require('../utils/database');
-const { generateSeed, generateTowersResults } = require('../utils/provablyFair');
+const { generateSeed, generateTowersResults, generateTowerMines } = require('../utils/provablyFair');
 const crypto = require('crypto');
 
 const activeGames = new Map();
@@ -22,7 +22,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        if (!interaction.deferred && !interaction.replied) {
+        // Ensure this is a button interaction and can be deferred
+        if (interaction.isButton && interaction.isButton() && !interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 
@@ -289,14 +290,29 @@ async function setupGame(interaction, betAmount, difficulty) {
     uniqueSeed.nonce = uniqueSeed.nonce + Math.random() * 1000000 + Date.now();
     uniqueSeed.hash = crypto.createHash('sha256').update(uniqueSeed.serverSeed + uniqueSeed.clientSeed + uniqueSeed.nonce.toString()).digest('hex');
 
-    const correctPath = generateTowersResults(uniqueSeed, 8, blocksPerLevel);
+    // Generate mine positions based on difficulty
+    const minePositions = generateTowerMines(uniqueSeed, difficulty);
+    
+    // Generate safe paths that avoid mines
+    const safePaths = [];
+    for (let level = 0; level < 8; level++) {
+        const levelMines = minePositions[level];
+        const safeBlocks = [];
+        for (let block = 0; block < blocksPerLevel; block++) {
+            if (!levelMines.includes(block)) {
+                safeBlocks.push(block);
+            }
+        }
+        safePaths.push(safeBlocks);
+    }
 
     const gameState = {
         userId,
         betAmount,
         difficulty,
         blocksPerLevel,
-        correctPath,
+        minePositions,
+        safePaths,
         currentLevel: 0,
         chosenPath: [],  // Track player's choices
         gameActive: true,
@@ -316,11 +332,16 @@ async function updateTowersBoard(interaction, gameState) {
     let completedLevels = '';
     for (let level = gameState.currentLevel - 1; level >= Math.max(0, gameState.currentLevel - 5); level--) {
         let levelStr = `Level ${level + 1}: `;
+        const levelMines = gameState.minePositions[level];
+        const chosenBlock = gameState.chosenPath[level];
+        
         for (let block = 0; block < gameState.blocksPerLevel; block++) {
-            if (block === gameState.correctPath[level]) {
-                levelStr += '💎 ';
+            if (block === chosenBlock) {
+                levelStr += '💎 ';  // Player's safe choice
+            } else if (levelMines.includes(block)) {
+                levelStr += '💣 ';  // Mine
             } else {
-                levelStr += '💣 ';
+                levelStr += '🟢 ';  // Other safe blocks
             }
         }
         completedLevels += levelStr + '\n';
@@ -380,15 +401,19 @@ async function selectTile(interaction, level, block) {
     // Track the player's choice
     gameState.chosenPath[level] = block;
     
-    if (block === gameState.correctPath[level]) {
+    // Check if the selected block is a mine
+    const levelMines = gameState.minePositions[level];
+    if (levelMines.includes(block)) {
+        // Hit a mine - lose
+        await loseGame(interaction, gameState);
+    } else {
+        // Safe block - continue
         gameState.currentLevel++;
         if (gameState.currentLevel >= 8) {
             await winGame(interaction, gameState);
         } else {
             await updateTowersBoard(interaction, gameState);
         }
-    } else {
-        await loseGame(interaction, gameState);
     }
 }
 
