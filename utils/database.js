@@ -1,10 +1,12 @@
 const { createClient } = require('@supabase/supabase-js');
 
-// Handle URL format - fallback to correct URL if environment variable is malformed
-const supabaseUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http') 
-    ? process.env.SUPABASE_URL 
-    : 'https://vfltbqpabgvbbxuezaah.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+// Use environment variables without fallback - fail fast if missing
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing required Supabase environment variables: SUPABASE_URL and SUPABASE_ANON_KEY');
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

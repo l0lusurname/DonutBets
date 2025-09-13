@@ -24,8 +24,11 @@ module.exports = {
             // Ensure user exists in database
             await ensureUserExists(userId, interaction.user.username);
 
-            // Check if user already has a verified account
-            const { data: existingLink, error: linkError } = await supabase
+            // Check if user already has a verified account using fresh connection
+            const { createClient } = require('@supabase/supabase-js');
+            const directSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+            
+            const { data: existingLink, error: linkError } = await directSupabase
                 .from('linked_accounts')
                 .select('*')
                 .eq('discord_user_id', userId)
@@ -64,14 +67,15 @@ module.exports = {
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
             // Remove any existing pending verification for this user
-            await supabase
+            await directSupabase
                 .from('linked_accounts')
                 .delete()
                 .eq('discord_user_id', userId)
                 .eq('status', 'Pending');
 
-            // Create new verification record
-            const { error: insertError } = await supabase
+            // Create new verification record using direct connection
+            
+            const { error: insertError } = await directSupabase
                 .from('linked_accounts')
                 .insert({
                     discord_user_id: userId,
