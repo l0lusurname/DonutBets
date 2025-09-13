@@ -57,8 +57,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        // Ensure this is a button interaction and can be deferred
-        if (interaction.isButton && interaction.isButton() && !interaction.deferred && !interaction.replied) {
+        // Defer the interaction immediately if not already handled
+        if (!interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 
@@ -98,10 +98,16 @@ async function handleButton(interaction, params) {
         }
     } catch (error) {
         console.error('Towers button error:', error);
-        if (!interaction.replied && !interaction.deferred) {
-            await interaction.reply({ content: 'An error occurred!', flags: 64 });
-        } else if (interaction.deferred) {
-            await interaction.editReply({ content: 'An error occurred!', components: [] });
+        try {
+            if (!interaction.replied && !interaction.deferred) {
+                await interaction.reply({ content: 'An error occurred!', ephemeral: true });
+            } else if (interaction.deferred && !interaction.replied) {
+                await interaction.editReply({ content: 'An error occurred!', components: [] });
+            } else {
+                await interaction.followUp({ content: 'An error occurred!', ephemeral: true });
+            }
+        } catch (replyError) {
+            console.error('Failed to send error response:', replyError);
         }
     }
 }
@@ -116,7 +122,7 @@ async function startGame(interaction) {
     if (balance < 1000) {
         const reply = {
             content: 'You need at least 1K credits to play Towers!',
-            flags: 64
+            ephemeral: true
         };
 
         if (interaction.replied || interaction.deferred) {
@@ -200,8 +206,8 @@ async function handleCustomBet(interaction) {
         const betInput = message.content.split(' ')[1];
         const betAmount = parseFormattedNumber(betInput);
 
-        if (isNaN(betAmount) || betAmount < 1000) {
-            await message.reply('Invalid bet amount! Minimum bet is 1K credits.');
+        if (isNaN(betAmount) || betAmount < 100) {
+            await message.reply('Invalid bet amount! Minimum bet is 100 credits.');
             return;
         }
 
