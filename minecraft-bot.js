@@ -270,20 +270,34 @@ class MinecraftBot {
 
             console.log(`✅ Account verified: ${verificationData.mc_username} -> Discord ${verificationData.discord_user_id}`);
 
-            // Send confirmation message to Discord user
+            // Send confirmation message to user's gambling room
             try {
                 if (!this.discordClient) {
-                    console.log('Discord client not available for sending confirmation DM');
+                    console.log('Discord client not available for sending confirmation message');
                     return;
                 }
-                
+
                 const user = await this.discordClient.users.fetch(verificationData.discord_user_id);
                 if (user) {
+                    // Find user's gambling room
+                    const guilds = this.discordClient.guilds.cache;
+                    let gamblingChannel = null;
+
+                    for (const guild of guilds.values()) {
+                        const channel = guild.channels.cache.find(
+                            ch => ch.name === `gambling-${user.username.toLowerCase()}` && ch.type === 0
+                        );
+                        if (channel) {
+                            gamblingChannel = channel;
+                            break;
+                        }
+                    }
+
                     const { EmbedBuilder } = require('discord.js');
                     const confirmEmbed = new EmbedBuilder()
                         .setColor('#4CAF50')
                         .setTitle('🔗 Account Successfully Linked!')
-                        .setDescription(`Your accounts have been successfully connected!`)
+                        .setDescription(`<@${verificationData.discord_user_id}>, your accounts have been successfully connected!`)
                         .addFields(
                             { name: '🎮 Minecraft Account', value: verificationData.mc_username, inline: true },
                             { name: '💬 Discord Account', value: `<@${verificationData.discord_user_id}>`, inline: true },
@@ -291,16 +305,21 @@ class MinecraftBot {
                         )
                         .addFields({
                             name: '🎰 What\'s Next?',
-                            value: '• Use `/deposit` to see how to add credits\n• Create your gambling room to start playing\n• Use `/balance` to check your credits',
+                            value: '• Use `/deposit` to see how to add credits\n• Use `/balance` to check your credits\n• Start gambling with any game command!',
                             inline: false
                         })
-                        .setFooter({ text: 'You can now deposit and withdraw funds!' })
+                        .setFooter({ text: 'You can now deposit and withdraw credits!' })
                         .setTimestamp();
 
-                    await user.send({ embeds: [confirmEmbed] });
+                    if (gamblingChannel) {
+                        await gamblingChannel.send({ embeds: [confirmEmbed] });
+                    } else {
+                        // Fallback to DM if no gambling room found
+                        await user.send({ embeds: [confirmEmbed] });
+                    }
                 }
-            } catch (dmError) {
-                console.log('Could not send verification confirmation DM:', dmError.message);
+            } catch (error) {
+                console.log('Could not send verification confirmation:', error.message);
             }
 
         } catch (error) {
@@ -362,6 +381,53 @@ class MinecraftBot {
                 });
 
             console.log(`✅ Deposit completed: ${linkedAccount.mc_username} deposited $${amountCents/100}`);
+
+            // Announce deposit in the gambling room
+            try {
+                if (!this.discordClient) {
+                    console.log('Discord client not available for sending deposit announcement');
+                    return;
+                }
+
+                const user = await this.discordClient.users.fetch(linkedAccount.discord_user_id);
+                if (user) {
+                    // Find user's gambling room
+                    const guilds = this.discordClient.guilds.cache;
+                    let gamblingChannel = null;
+
+                    for (const guild of guilds.values()) {
+                        const channel = guild.channels.cache.find(
+                            ch => ch.name === `gambling-${user.username.toLowerCase()}` && ch.type === 0
+                        );
+                        if (channel) {
+                            gamblingChannel = channel;
+                            break;
+                        }
+                    }
+
+                    const { EmbedBuilder } = require('discord.js');
+                    const depositEmbed = new EmbedBuilder()
+                        .setColor('#0099ff')
+                        .setTitle('💸 New Deposit Received!')
+                        .setDescription(`<@${linkedAccount.discord_user_id}> has deposited **$${amountCents/100}**!`)
+                        .addFields(
+                            { name: '🎮 Minecraft Account', value: linkedAccount.mc_username, inline: true },
+                            { name: '💬 Discord Account', value: `<@${linkedAccount.discord_user_id}>`, inline: true },
+                            { name: '💰 New Balance', value: `Your new balance is $${(currentUser.balance + creditsToAdd).toFixed(2)}`, inline: false }
+                        )
+                        .setFooter({ text: 'Happy gambling!' })
+                        .setTimestamp();
+
+                    if (gamblingChannel) {
+                        await gamblingChannel.send({ embeds: [depositEmbed] });
+                    } else {
+                        // Fallback to DM if no gambling room found
+                        await user.send({ embeds: [depositEmbed] });
+                    }
+                }
+            } catch (error) {
+                console.log('Could not send deposit announcement:', error.message);
+            }
 
         } catch (error) {
             console.error('Error processing deposit:', error);
