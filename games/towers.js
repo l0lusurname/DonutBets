@@ -82,11 +82,16 @@ async function handleButton(interaction, params) {
                 await handleDifficultySelection(interaction, data[0]);
                 break;
             case 'game':
+                console.log(`[TOWERS DEBUG] Starting game case for ${interaction.user.username}`);
                 const userId = interaction.user.id;
                 const gameState = activeGames.get(userId);
+                console.log(`[TOWERS DEBUG] gameState for ${interaction.user.username}:`, JSON.stringify(gameState));
                 if (gameState && gameState.betAmount && gameState.difficulty) {
+                    console.log(`[TOWERS DEBUG] Valid state for ${interaction.user.username}, calling setupGame...`);
                     await setupGame(interaction, gameState.betAmount, gameState.difficulty);
+                    console.log(`[TOWERS DEBUG] setupGame completed for ${interaction.user.username}`);
                 } else {
+                    console.log(`[TOWERS DEBUG] Invalid state for ${interaction.user.username}, showing error`);
                     // Keep the selection UI and show an error message
                     await interaction.followUp({ 
                         content: 'Please select both a bet amount and difficulty before starting the game!', 
