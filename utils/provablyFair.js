@@ -210,33 +210,48 @@ async function calculateTowerMultiplier(difficulty, level, houseEdge = null) {
         houseEdge = settings.house_edge;
     }
 
-    let perFloorFactor;
-    const totalSlots = 4; // 4 blocks per floor as per spec
+    let safeSlots;
+    const totalSlots = 4; // 4 blocks per level
 
-    // Per-floor factor = (totalSlots/safeSlots) * (1 - house_edge)
+    // Determine safe slots based on difficulty
     switch (difficulty) {
         case 'easy':
-            // 3 safe, 1 mine 
-            perFloorFactor = (totalSlots / 3) * (1 - houseEdge);
+            safeSlots = 3; // 1 mine, 3 safe blocks
             break;
         case 'medium':
-            // 2 safe, 2 mines 
-            perFloorFactor = (totalSlots / 2) * (1 - houseEdge);
+            safeSlots = 2; // 2 mines, 2 safe blocks  
             break;
         case 'hard':
-            // 1 safe, 3 mines 
-            perFloorFactor = (totalSlots / 1) * (1 - houseEdge);
+            safeSlots = 1; // 3 mines, 1 safe block
             break;
         default:
-            perFloorFactor = (totalSlots / 3) * (1 - houseEdge);
+            safeSlots = 3;
     }
 
-    // Cumulative multiplier = per-floor factor compounded for each floor
-    let cumulativeMultiplier = 1;
-    for (let floor = 0; floor <= level; floor++) {
-        cumulativeMultiplier *= perFloorFactor;
+    // Mathematically fair per-step multiplier = (totalSlots/safeSlots) × (1 - house_edge)
+    const perStepMultiplier = (totalSlots / safeSlots) * (1 - houseEdge);
+    
+    // Cumulative multiplier after clearing (level + 1) steps
+    let cumulativeMultiplier = Math.pow(perStepMultiplier, level + 1);
+    
+    // Apply high caps only to prevent extreme edge cases, not interfere with normal fair play
+    let maxMultiplier;
+    switch (difficulty) {
+        case 'easy':
+            maxMultiplier = 20; // High enough to not interfere with 8-level completion (~5.5x)
+            break;
+        case 'medium':
+            maxMultiplier = 300; // High enough to not interfere with 8-level completion (~169x)
+            break;
+        case 'hard':
+            maxMultiplier = 50000; // High enough to not interfere with 8-level completion (~43000x)
+            break;
+        default:
+            maxMultiplier = 20;
     }
-
+    
+    cumulativeMultiplier = Math.min(cumulativeMultiplier, maxMultiplier);
+    
     return Math.max(1.01, Math.floor(cumulativeMultiplier * 100) / 100);
 }
 

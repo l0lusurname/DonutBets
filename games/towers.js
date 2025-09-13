@@ -325,7 +325,10 @@ async function setupGame(interaction, betAmount, difficulty) {
 }
 
 async function updateTowersBoard(interaction, gameState) {
-    const multiplier = Math.pow(1.5, gameState.currentLevel);
+    const { calculateTowerMultiplier } = require('../utils/provablyFair');
+    const multiplier = gameState.currentLevel > 0 
+        ? await calculateTowerMultiplier(gameState.difficulty, gameState.currentLevel - 1)
+        : 1;
     const potentialWin = Math.floor(gameState.betAmount * multiplier);
 
     // Build visual representation of completed levels
