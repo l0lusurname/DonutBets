@@ -116,7 +116,7 @@ async function startGame(interaction) {
     // Check if user already has an active game
     if (activeGames.has(userId)) {
         const reply = {
-            content: '❌ You already have an active Mines game! Use the "🚪 Close Game" button to end your current session first.',
+            content: '❌ You already have an active Mines game! Please finish or wait for your current game to end before starting a new one.',
             flags: 64
         };
         
