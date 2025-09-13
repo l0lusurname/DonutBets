@@ -321,71 +321,71 @@ async function updateSelectionDisplay(interaction, gameState) {
 }
 
 async function setupGame(interaction, betAmount, difficulty) {
-    const userId = interaction.user.id;
-    let balance = await getUserBalance(userId);
+    try {
+        const userId = interaction.user.id;
+        const balance = await getUserBalance(userId);
 
-    // Give users starting balance if they have 0
-    if (balance === 0) {
-        await updateUserBalance(userId, 10000);
-        balance = 10000;
-    }
+        if (balance < betAmount) {
+            await interaction.editReply({ 
+                content: `Insufficient balance! You have ${formatCurrency(balance)} but need ${formatCurrency(betAmount)}.`, 
+                components: [] 
+            });
+            return;
+        }
 
-    if (balance < betAmount) {
+        let blocksPerLevel;
+        switch (difficulty) {
+            case 'easy': blocksPerLevel = 4; break;
+            case 'medium': blocksPerLevel = 4; break;
+            case 'hard': blocksPerLevel = 4; break;
+            default: blocksPerLevel = 4;
+        }
+
+        // Generate a truly unique seed for each game
+        const uniqueSeed = generateSeed();
+        // Add extra randomness to make each game unique
+        uniqueSeed.nonce = uniqueSeed.nonce + Math.random() * 1000000 + Date.now();
+        uniqueSeed.hash = crypto.createHash('sha256').update(uniqueSeed.serverSeed + uniqueSeed.clientSeed + uniqueSeed.nonce.toString()).digest('hex');
+
+        // Generate mine positions based on difficulty
+        const minePositions = generateTowerMines(uniqueSeed, difficulty);
+        
+        // Generate safe paths that avoid mines
+        const safePaths = [];
+        for (let level = 0; level < 8; level++) {
+            const levelMines = minePositions[level];
+            const safeBlocks = [];
+            for (let block = 0; block < blocksPerLevel; block++) {
+                if (!levelMines.includes(block)) {
+                    safeBlocks.push(block);
+                }
+            }
+            safePaths.push(safeBlocks);
+        }
+
+        const gameState = {
+            userId,
+            betAmount,
+            difficulty,
+            blocksPerLevel,
+            minePositions,
+            safePaths,
+            currentLevel: 0,
+            chosenPath: [],  // Track player's choices
+            gameActive: true,
+            seed: uniqueSeed
+        };
+
+        activeGames.set(userId, gameState);
+        await updateUserBalance(userId, balance - betAmount);
+        await updateTowersBoard(interaction, gameState);
+    } catch (error) {
+        console.error(`SETUPGAME ERROR for ${interaction.user.username}:`, error);
         await interaction.editReply({ 
-            content: `Insufficient balance! You have ${formatCurrency(balance)} but need ${formatCurrency(betAmount)}. Use \`/deposit\` to add credits.`, 
+            content: 'Failed to start game. Please try again.', 
             components: [] 
         });
-        return;
     }
-
-    // Bank balance validation removed - no more bet limits!
-
-    let blocksPerLevel;
-    switch (difficulty) {
-        case 'easy': blocksPerLevel = 4; break;
-        case 'medium': blocksPerLevel = 4; break;
-        case 'hard': blocksPerLevel = 4; break;
-        default: blocksPerLevel = 4;
-    }
-
-    // Generate a truly unique seed for each game
-    const uniqueSeed = generateSeed();
-    // Add extra randomness to make each game unique
-    uniqueSeed.nonce = uniqueSeed.nonce + Math.random() * 1000000 + Date.now();
-    uniqueSeed.hash = crypto.createHash('sha256').update(uniqueSeed.serverSeed + uniqueSeed.clientSeed + uniqueSeed.nonce.toString()).digest('hex');
-
-    // Generate mine positions based on difficulty
-    const minePositions = generateTowerMines(uniqueSeed, difficulty);
-    
-    // Generate safe paths that avoid mines
-    const safePaths = [];
-    for (let level = 0; level < 8; level++) {
-        const levelMines = minePositions[level];
-        const safeBlocks = [];
-        for (let block = 0; block < blocksPerLevel; block++) {
-            if (!levelMines.includes(block)) {
-                safeBlocks.push(block);
-            }
-        }
-        safePaths.push(safeBlocks);
-    }
-
-    const gameState = {
-        userId,
-        betAmount,
-        difficulty,
-        blocksPerLevel,
-        minePositions,
-        safePaths,
-        currentLevel: 0,
-        chosenPath: [],  // Track player's choices
-        gameActive: true,
-        seed: uniqueSeed
-    };
-
-    activeGames.set(userId, gameState);
-    await updateUserBalance(userId, balance - betAmount);
-    await updateTowersBoard(interaction, gameState);
 }
 
 async function updateTowersBoard(interaction, gameState) {
