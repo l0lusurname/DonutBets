@@ -57,8 +57,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        // Defer the interaction immediately if not already handled
-        if (!interaction.deferred && !interaction.replied) {
+        // Don't defer for certain actions that need immediate response
+        if (action !== 'bet' && action !== 'difficulty' && !interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 
@@ -240,6 +240,11 @@ async function handleBetSelection(interaction, betAmount) {
     gameState.betAmount = betAmount;
     activeGames.set(userId, gameState);
 
+    // Update interaction immediately for button clicks
+    if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferUpdate();
+    }
+    
     // Always update selection display instead of auto-starting game
     await updateSelectionDisplay(interaction, gameState);
 }
@@ -250,6 +255,11 @@ async function handleDifficultySelection(interaction, difficulty) {
     gameState.difficulty = difficulty;
     activeGames.set(userId, gameState);
 
+    // Update interaction immediately for button clicks
+    if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferUpdate();
+    }
+    
     // Always update selection display instead of auto-starting game
     await updateSelectionDisplay(interaction, gameState);
 }
@@ -303,7 +313,11 @@ async function updateSelectionDisplay(interaction, gameState) {
         components.push(startRow);
     }
 
-    await interaction.editReply({ embeds: [embed], components });
+    if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ embeds: [embed], components });
+    } else {
+        await interaction.update({ embeds: [embed], components });
+    }
 }
 
 async function setupGame(interaction, betAmount, difficulty) {
