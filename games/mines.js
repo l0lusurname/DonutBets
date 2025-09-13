@@ -183,10 +183,15 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Danger)
         );
 
+    const closeRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('mines_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
+        );
+
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2, closeRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2, closeRow] });
     }
 }
 
@@ -484,17 +489,13 @@ async function updateGameBoard(interaction, gameState) {
         rows.push(row);
     }
 
-    // Add control buttons (cashout and close)
+    // Add cashout button
     const controlRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
                 .setCustomId('mines_cashout')
                 .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId('mines_close')
-                .setLabel('🚪 Close Gambling Room')
-                .setStyle(ButtonStyle.Danger)
+                .setStyle(ButtonStyle.Success)
         );
     rows.push(controlRow);
 

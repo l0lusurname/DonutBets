@@ -172,10 +172,15 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 4 blocks, 1 safe').setStyle(ButtonStyle.Danger)
         );
 
+    const closeRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('towers_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
+        );
+
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, difficultyRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, difficultyRow, closeRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow, difficultyRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, difficultyRow, closeRow] });
     }
 }
 
@@ -431,26 +436,16 @@ async function updateTowersBoard(interaction, gameState) {
         rows.push(currentLevelRow);
     }
 
-    // Control buttons (cashout if progressed, and close game)
-    const controlButtons = [];
+    // Add cashout button if player has progressed
     if (gameState.currentLevel > 0) {
-        controlButtons.push(
-            new ButtonBuilder()
-                .setCustomId('towers_cashout')
-                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                .setStyle(ButtonStyle.Success)
-        );
-    }
-    controlButtons.push(
-        new ButtonBuilder()
-            .setCustomId('towers_close')
-            .setLabel('🚪 Close Gambling Room')
-            .setStyle(ButtonStyle.Danger)
-    );
-    
-    if (controlButtons.length > 0) {
-        const controlRow = new ActionRowBuilder().addComponents(...controlButtons);
-        rows.push(controlRow);
+        const cashoutRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('towers_cashout')
+                    .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                    .setStyle(ButtonStyle.Success)
+            );
+        rows.push(cashoutRow);
     }
 
     await interaction.editReply({ embeds: [embed], components: rows });

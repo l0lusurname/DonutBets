@@ -151,10 +151,15 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('crash_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
         );
 
+    const closeRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('crash_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
+        );
+
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, closeRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, closeRow] });
     }
 }
 
@@ -322,11 +327,7 @@ async function updateCrashGame(interaction, gameState) {
             new ButtonBuilder()
                 .setCustomId('crash_cashout')
                 .setLabel(`💰 Cash Out - ${formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier))}`)
-                .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-                .setCustomId('crash_close')
-                .setLabel('🚪 Close Gambling Room')
-                .setStyle(ButtonStyle.Danger)
+                .setStyle(ButtonStyle.Success)
         );
 
     await interaction.editReply({ embeds: [embed], components: [controlRow] });

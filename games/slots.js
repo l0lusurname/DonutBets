@@ -132,10 +132,15 @@ async function showBetSelection(interaction) {
             new ButtonBuilder().setCustomId('slots_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
         );
 
+    const closeRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('slots_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
+        );
+
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, closeRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, closeRow] });
     }
 }
 
