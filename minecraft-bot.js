@@ -249,11 +249,23 @@ class MinecraftBot {
         try {
             console.log(`💳 Processing deposit: ${linkedAccount.mc_username} -> $${amountCents/100}`);
 
+            // Get current balance first
+            const { data: currentUser, error: getUserError } = await this.supabase
+                .from('users')
+                .select('balance')
+                .eq('id', linkedAccount.discord_user_id)
+                .single();
+
+            if (getUserError) {
+                console.error('Error getting user balance:', getUserError);
+                return;
+            }
+
             // Update user balance
             const { error: balanceError } = await this.supabase
                 .from('users')
                 .update({ 
-                    balance: this.supabase.sql`balance + ${amountCents}`
+                    balance: currentUser.balance + amountCents
                 })
                 .eq('id', linkedAccount.discord_user_id);
 
@@ -266,7 +278,7 @@ class MinecraftBot {
             await this.supabase
                 .from('linked_accounts')
                 .update({
-                    total_deposited_cents: this.supabase.sql`total_deposited_cents + ${amountCents}`,
+                    total_deposited_cents: linkedAccount.total_deposited_cents + amountCents,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', linkedAccount.id);
