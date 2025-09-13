@@ -333,7 +333,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setColor('#FFD700')
                     .addFields(
                         { name: '🎮 Game Commands', value: '`/mines` - Play Mines\n`/towers` - Play Towers\n`/crash` - Play Crash\n`/slots` - Play Slots', inline: true },
-                        { name: '💰 Account Commands', value: '`/balance` - Check balance\n`/deposit` - Add credits\n`/withdraw` - Request withdrawal', inline: true }
+                        { name: '💰 Account Commands', value: '`/balance` - Check balance\n`Open a ticket` - Add credits\n`/withdraw` - Request withdrawal', inline: true }
                     )
                     .setFooter({ text: 'Good luck and gamble responsibly!' })
                     .setTimestamp();
