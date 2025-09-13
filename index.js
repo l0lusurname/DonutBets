@@ -59,6 +59,9 @@ client.minecraftBot = minecraftBot;
 
 client.once(Events.ClientReady, async readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    
+    // Set Discord client reference in Minecraft bot
+    minecraftBot.setDiscordClient(readyClient);
 
     // Register slash commands with Discord
     try {

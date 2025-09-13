@@ -9,6 +9,7 @@ class MinecraftBot {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 50;
         this.reconnectDelay = 5000; // 5 seconds initial delay
+        this.discordClient = null; // Discord client reference
 
         // Initialize Supabase
         this.supabase = createClient(
@@ -17,6 +18,10 @@ class MinecraftBot {
         );
 
         console.log('Minecraft bot initialized');
+    }
+
+    setDiscordClient(client) {
+        this.discordClient = client;
     }
 
     async connect() {
@@ -100,8 +105,23 @@ class MinecraftBot {
             console.log('👢 Minecraft bot was kicked:', reason);
             this.isConnected = false;
 
-            // If kicked, try offline mode next time
-            if (reason && reason.includes('premium')) {
+            // Handle both string and object reason formats
+            let reasonText = '';
+            if (typeof reason === 'string') {
+                reasonText = reason;
+            } else if (reason && typeof reason === 'object') {
+                // Extract text from compound reason object
+                if (reason.value && reason.value.text && reason.value.text.value) {
+                    reasonText = reason.value.text.value;
+                } else if (reason.text) {
+                    reasonText = reason.text;
+                } else {
+                    reasonText = JSON.stringify(reason);
+                }
+            }
+
+            // If kicked for premium issues, try offline mode next time
+            if (reasonText && reasonText.toLowerCase().includes('premium')) {
                 console.log('🔄 Kicked for premium account, will try offline mode...');
                 this.authFailed = true;
             }
@@ -252,7 +272,12 @@ class MinecraftBot {
 
             // Send confirmation message to Discord user
             try {
-                const user = await this.client.users.fetch(verificationData.discord_user_id);
+                if (!this.discordClient) {
+                    console.log('Discord client not available for sending confirmation DM');
+                    return;
+                }
+                
+                const user = await this.discordClient.users.fetch(verificationData.discord_user_id);
                 if (user) {
                     const { EmbedBuilder } = require('discord.js');
                     const confirmEmbed = new EmbedBuilder()
