@@ -494,20 +494,24 @@ async function loseGame(interaction, gameState) {
         const blocksPerLevel = gameState.blocksPerLevel;
         
         for (let block = 0; block < blocksPerLevel; block++) {
-            const isCorrect = gameState.correctPath[level] === block;
+            const levelMines = gameState.minePositions[level];
+            const isMine = levelMines.includes(block);
             const wasChosen = gameState.chosenPath && gameState.chosenPath[level] === block;
-            const isFailurePoint = level === gameState.currentLevel && wasChosen && !isCorrect;
+            const isFailurePoint = level === gameState.currentLevel && wasChosen && isMine;
             
             let style, label;
             if (isFailurePoint) {
                 style = ButtonStyle.Danger;
-                label = '💥';  // Wrong choice that ended game
-            } else if (isCorrect) {
+                label = '💥';  // Mine that ended game
+            } else if (isMine) {
+                style = ButtonStyle.Danger;
+                label = '💣';  // Other mines
+            } else if (wasChosen) {
                 style = ButtonStyle.Success;
-                label = '✅';  // Correct path
+                label = '💎';  // Safe choice made by player
             } else {
-                style = ButtonStyle.Secondary;
-                label = '❌';  // Wrong blocks
+                style = ButtonStyle.Success;
+                label = '🟢';  // Other safe blocks
             }
             
             row.addComponents(
