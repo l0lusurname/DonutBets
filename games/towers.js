@@ -234,11 +234,8 @@ async function handleBetSelection(interaction, betAmount) {
     gameState.betAmount = betAmount;
     activeGames.set(userId, gameState);
 
-    if (gameState.difficulty) {
-        await setupGame(interaction, gameState.betAmount, gameState.difficulty);
-    } else {
-        await updateSelectionDisplay(interaction, gameState);
-    }
+    // Always update selection display instead of auto-starting game
+    await updateSelectionDisplay(interaction, gameState);
 }
 
 async function handleDifficultySelection(interaction, difficulty) {
@@ -247,11 +244,8 @@ async function handleDifficultySelection(interaction, difficulty) {
     gameState.difficulty = difficulty;
     activeGames.set(userId, gameState);
 
-    if (gameState.betAmount) {
-        await setupGame(interaction, gameState.betAmount, gameState.difficulty);
-    } else {
-        await updateSelectionDisplay(interaction, gameState);
-    }
+    // Always update selection display instead of auto-starting game
+    await updateSelectionDisplay(interaction, gameState);
 }
 
 async function updateSelectionDisplay(interaction, gameState) {
