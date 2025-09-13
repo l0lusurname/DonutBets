@@ -29,23 +29,24 @@ class MinecraftBot {
             const hasCredentials = process.env.MC_USERNAME && process.env.MC_PASSWORD;
             
             if (hasCredentials) {
-                console.log(`Connecting to donutsmp.net as ${process.env.MC_USERNAME} (premium)...`);
+                console.log(`Connecting to donutsmp.net as ${process.env.MC_USERNAME} (premium device-code auth)...`);
                 
+                // Use device-code auth (removes password to avoid PPFT error)
                 this.bot = mineflayer.createBot({
                     host: 'donutsmp.net',
                     port: 25565,
                     username: process.env.MC_USERNAME,
-                    password: process.env.MC_PASSWORD,
-                    version: '1.20.1',
+                    // No password - uses device-code auth
                     auth: 'microsoft'
+                    // Let mineflayer auto-detect version
                 });
             } else {
-                console.log('⚠️  No MC credentials found, connecting in offline mode for testing...');
+                console.log('⚠️  No MC credentials found, connecting in offline mode...');
                 
                 this.bot = mineflayer.createBot({
                     host: 'donutsmp.net',
                     port: 25565,
-                    username: 'TestBot_' + Math.floor(Math.random() * 1000),
+                    username: 'CasinoBot_' + Math.floor(Math.random() * 1000),
                     version: '1.20.1',
                     auth: 'offline'
                 });
@@ -69,6 +70,7 @@ class MinecraftBot {
 
         this.bot.on('spawn', () => {
             console.log('🌍 Bot spawned in minecraft world');
+            console.log(`Server: ${this.bot.game.levelType}, Version: ${this.bot.version}`);
         });
 
         this.bot.on('message', (message) => {
@@ -76,8 +78,16 @@ class MinecraftBot {
         });
 
         this.bot.on('error', (error) => {
-            console.error('❌ Minecraft bot error:', error);
+            console.error('❌ Minecraft bot error:', error.message || error);
             this.isConnected = false;
+        });
+
+        // Handle Microsoft device-code auth
+        this.bot.on('microsoftAuth', (data) => {
+            console.log('\n🔐 MICROSOFT AUTH REQUIRED:');
+            console.log(`Visit: ${data.verification_uri}`);
+            console.log(`Enter code: ${data.user_code}`);
+            console.log('Complete authentication in browser, then bot will connect automatically.\n');
         });
 
         this.bot.on('end', (reason) => {
@@ -89,6 +99,13 @@ class MinecraftBot {
         this.bot.on('kicked', (reason) => {
             console.log('👢 Minecraft bot was kicked:', reason);
             this.isConnected = false;
+            
+            // If kicked, try offline mode next time
+            if (reason && reason.includes('premium')) {
+                console.log('🔄 Kicked for premium account, will try offline mode...');
+                this.authFailed = true;
+            }
+            
             this.scheduleReconnect();
         });
     }
@@ -318,8 +335,13 @@ class MinecraftBot {
         console.log(`🔄 Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
         
         setTimeout(() => {
-            this.connect();
+            this.connectWithFallback();
         }, delay);
+    }
+
+    async connectWithFallback() {
+        // No fallback to offline mode - donutsmp.net is premium-only
+        await this.connect();
     }
 
     async payPlayer(playerName, amount) {
