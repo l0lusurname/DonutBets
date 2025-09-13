@@ -53,6 +53,10 @@ const { generateSeed, verifySeed } = require('./utils/provablyFair');
 client.supabase = supabase;
 client.utils = { ensureUserExists, formatCurrency, generateSeed, verifySeed };
 
+// Initialize Minecraft bot
+const minecraftBot = require('./minecraft-bot');
+client.minecraftBot = minecraftBot;
+
 client.once(Events.ClientReady, async readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
     
@@ -68,6 +72,10 @@ client.once(Events.ClientReady, async readyClient => {
     } catch (error) {
         console.error('Error registering commands:', error);
     }
+    
+    // Start Minecraft bot connection after Discord is ready
+    console.log('🎮 Starting Minecraft bot connection...');
+    minecraftBot.connect();
 });
 
 // Handle message commands like ?bankset
