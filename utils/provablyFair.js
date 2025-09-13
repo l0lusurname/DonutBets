@@ -113,8 +113,16 @@ function generateTowerMines(seed, difficulty) {
         // Generate mine positions for this level
         for (let m = 0; m < minesPerLevel; m++) {
             let position;
+            let attempts = 0;
             do {
-                position = getRandomFromSeed(seed, 0, slotsPerLevel - 1, level * 10 + m);
+                position = getRandomFromSeed(seed, 0, slotsPerLevel - 1, level * 10 + m + attempts * 100);
+                attempts++;
+                // Prevent infinite loops if we can't find enough unique positions
+                if (attempts > 50) {
+                    console.error(`Could not generate unique mine positions for level ${level}, difficulty ${difficulty}`);
+                    position = m; // Fallback to sequential positions
+                    break;
+                }
             } while (used.has(position));
 
             used.add(position);
