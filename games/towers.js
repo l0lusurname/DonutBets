@@ -6,16 +6,51 @@ const crypto = require('crypto');
 const activeGames = new Map();
 
 function parseFormattedNumber(input) {
-    if (typeof input === 'number') return input;
+    if (typeof input === 'number') {
+        // Validate numeric input
+        if (!Number.isFinite(input) || input < 0 || input > 1000000000000) {
+            throw new Error('Invalid number: must be finite, positive, and within reasonable limits');
+        }
+        return Math.floor(input);
+    }
 
-    const str = input.toString().toLowerCase().replace(/,/g, '');
+    if (typeof input !== 'string' || input.trim() === '') {
+        throw new Error('Invalid input: must be a non-empty string or number');
+    }
+
+    // Clean and validate string input
+    const str = input.toString().toLowerCase().trim().replace(/,/g, '');
+    
+    // Reject dangerous patterns
+    if (str.includes('infinity') || str.includes('nan') || str.includes('e') || str.includes('script') || str.includes('\x00')) {
+        throw new Error('Invalid input: contains dangerous patterns');
+    }
+    
+    // Parse base number
     const num = parseFloat(str);
-
-    if (str.includes('k')) return Math.floor(num * 1000);
-    if (str.includes('m')) return Math.floor(num * 1000000);
-    if (str.includes('b')) return Math.floor(num * 1000000000);
-
-    return Math.floor(num);
+    
+    // Validate parsed number
+    if (!Number.isFinite(num) || num < 0) {
+        throw new Error('Invalid number: must be finite and positive');
+    }
+    
+    let result;
+    if (str.includes('k')) {
+        result = num * 1000;
+    } else if (str.includes('m')) {
+        result = num * 1000000;
+    } else if (str.includes('b')) {
+        result = num * 1000000000;
+    } else {
+        result = num;
+    }
+    
+    // Final validation and bounds checking
+    if (!Number.isFinite(result) || result < 1 || result > 1000000000000) {
+        throw new Error('Result out of bounds: must be between 1 and 1T');
+    }
+    
+    return Math.floor(result);
 }
 
 async function handleButton(interaction, params) {

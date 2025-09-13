@@ -129,18 +129,51 @@ function formatCurrency(amount) {
 
 // Parse currency format back to number
 function parseCurrency(input) {
-    const str = input.toString().toUpperCase();
-    const num = parseFloat(str);
+    if (typeof input === 'number') {
+        // Validate numeric input
+        if (!Number.isFinite(input) || input < 0 || input > 1000000000000) {
+            throw new Error('Invalid number: must be finite, positive, and within reasonable limits');
+        }
+        return Math.floor(input);
+    }
+
+    if (typeof input !== 'string' || input.trim() === '') {
+        throw new Error('Invalid input: must be a non-empty string or number');
+    }
+
+    // Clean and validate string input
+    const str = input.toString().toUpperCase().trim().replace(/,/g, '');
     
-    if (str.includes('K')) {
-        return Math.floor(num * 1000);
-    } else if (str.includes('M')) {
-        return Math.floor(num * 1000000);
-    } else if (str.includes('B')) {
-        return Math.floor(num * 1000000000);
+    // Reject dangerous patterns
+    if (str.includes('INFINITY') || str.includes('NAN') || str.includes('E') || str.includes('SCRIPT') || str.includes('\x00')) {
+        throw new Error('Invalid input: contains dangerous patterns');
     }
     
-    return Math.floor(num);
+    // Parse base number
+    const num = parseFloat(str);
+    
+    // Validate parsed number
+    if (!Number.isFinite(num) || num < 0) {
+        throw new Error('Invalid number: must be finite and positive');
+    }
+    
+    let result;
+    if (str.includes('K')) {
+        result = num * 1000;
+    } else if (str.includes('M')) {
+        result = num * 1000000;
+    } else if (str.includes('B')) {
+        result = num * 1000000000;
+    } else {
+        result = num;
+    }
+    
+    // Final validation and bounds checking
+    if (!Number.isFinite(result) || result < 1 || result > 1000000000000) {
+        throw new Error('Result out of bounds: must be between 1 and 1T');
+    }
+    
+    return Math.floor(result);
 }
 
 // Log withdrawal request
