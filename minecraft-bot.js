@@ -127,15 +127,25 @@ class MinecraftBot {
         if (message.extra || message.translate || (message.color && message.color !== 'white')) {
             // This looks like a system message - proceed with payment detection
             
-            // Parse payment messages (e.g., "PlayerName paid you $500.50")
-            const paymentRegex = /^(\w+) paid you \$?([\d,]+\.?\d*)/i;
+            // Parse payment messages (e.g., "PlayerName paid you $500.50" or "PlayerName paid you $1K")
+            const paymentRegex = /^(\w+) paid you \$?([\d,]+\.?\d*[KMB]?)/i;
             const match = text.match(paymentRegex);
             
             if (match) {
                 const [, playerName, amountStr] = match;
-                const amount = parseFloat(amountStr.replace(/,/g, ''));
+                let amount = parseFloat(amountStr.replace(/,/g, ''));
                 
-                console.log(`💰 System payment detected: ${playerName} paid $${amount}`);
+                // Handle K, M, B suffixes
+                const upperAmount = amountStr.toUpperCase();
+                if (upperAmount.includes('K')) {
+                    amount = amount * 1000;
+                } else if (upperAmount.includes('M')) {
+                    amount = amount * 1000000;
+                } else if (upperAmount.includes('B')) {
+                    amount = amount * 1000000000;
+                }
+                
+                console.log(`💰 System payment detected: ${playerName} paid $${amount} (original: ${amountStr})`);
                 
                 await this.handlePayment(playerName, amount, text);
             }
