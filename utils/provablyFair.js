@@ -234,6 +234,10 @@ async function calculateTowerMultiplier(difficulty, level, houseEdge = null) {
     // Cumulative multiplier after clearing (level + 1) steps
     let cumulativeMultiplier = Math.pow(perStepMultiplier, level + 1);
     
+    // Apply nerf factor to reduce overall profitability
+    const nerfFactor = 0.75; // 25% reduction to make towers less profitable
+    cumulativeMultiplier = cumulativeMultiplier * nerfFactor;
+    
     // Apply high caps only to prevent extreme edge cases, not interfere with normal fair play
     let maxMultiplier;
     switch (difficulty) {
