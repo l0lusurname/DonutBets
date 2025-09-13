@@ -55,11 +55,16 @@ function parseFormattedNumber(input) {
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
+    console.log(`[TOWERS DEBUG] handleButton called for ${interaction.user.username} (${interaction.user.id}) - action: ${action}`);
 
     try {
         // Handle interaction deferral consistently
         if (!interaction.deferred && !interaction.replied) {
+            console.log(`[TOWERS DEBUG] Deferring interaction for ${interaction.user.username}`);
             await interaction.deferUpdate();
+            console.log(`[TOWERS DEBUG] Successfully deferred for ${interaction.user.username}`);
+        } else {
+            console.log(`[TOWERS DEBUG] Interaction already deferred/replied for ${interaction.user.username}: deferred=${interaction.deferred}, replied=${interaction.replied}`);
         }
 
         switch (action) {
