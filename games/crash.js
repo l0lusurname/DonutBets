@@ -56,7 +56,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        if (!interaction.deferred && !interaction.replied) {
+        // Improved interaction handling - check if it's a button and defer properly
+        if (interaction.isButton && interaction.isButton() && !interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 
@@ -77,6 +78,9 @@ async function handleButton(interaction, params) {
             case 'newgame':
                 await startGame(interaction);
                 break;
+            case 'close':
+                await closeGame(interaction);
+                break;
         }
     } catch (error) {
         console.error('Crash button error:', error);
@@ -90,6 +94,22 @@ async function handleButton(interaction, params) {
 
 async function startGame(interaction) {
     const userId = interaction.user.id;
+    
+    // Check if user already has an active game
+    if (activeGames.has(userId)) {
+        const reply = {
+            content: '❌ You already have an active Crash game! Use the "🚪 Close Game" button to end your current session first.',
+            flags: 64
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
+        return;
+    }
+    
     const balance = await getUserBalance(userId);
 
     if (balance < 1000) {
@@ -297,15 +317,19 @@ async function updateCrashGame(interaction, gameState) {
             { name: '💰 Current Value', value: formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier)), inline: true }
         );
 
-    const cashoutRow = new ActionRowBuilder()
+    const controlRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
                 .setCustomId('crash_cashout')
                 .setLabel(`💰 Cash Out - ${formatCurrency(Math.floor(gameState.betAmount * gameState.currentMultiplier))}`)
-                .setStyle(ButtonStyle.Success)
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId('crash_close')
+                .setLabel('🚪 Close Game')
+                .setStyle(ButtonStyle.Danger)
         );
 
-    await interaction.editReply({ embeds: [embed], components: [cashoutRow] });
+    await interaction.editReply({ embeds: [embed], components: [controlRow] });
 
     // Slower update interval - 300ms instead of 100ms
     setTimeout(() => updateCrashGame(interaction, gameState), 300);
@@ -414,6 +438,42 @@ async function endCrashGame(interaction, gameState, crashed) {
 
         await interaction.editReply({ embeds: [embed], components: [newGameRow] });
     }
+}
+
+async function closeGame(interaction) {
+    const userId = interaction.user.id;
+    
+    if (!activeGames.has(userId)) {
+        const reply = {
+            content: '❌ You don\'t have an active Crash game to close.',
+            flags: 64
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
+        return;
+    }
+    
+    // Remove the active game
+    activeGames.delete(userId);
+    
+    const embed = new EmbedBuilder()
+        .setTitle('🚪 Game Closed')
+        .setDescription('Your Crash game has been closed. You can start a new game anytime!')
+        .setColor('#6c757d');
+    
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('crash_newgame')
+                .setLabel('🎮 Start New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+    
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
 module.exports = { handleButton, startGame };

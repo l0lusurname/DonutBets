@@ -56,8 +56,8 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        // Only defer if we haven't responded yet
-        if (!interaction.deferred && !interaction.replied) {
+        // Improved interaction handling - check if it's a button and defer properly
+        if (interaction.isButton && interaction.isButton() && !interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
 
@@ -91,6 +91,9 @@ async function handleButton(interaction, params) {
             case 'newgame':
                 await startGame(interaction);
                 break;
+            case 'close':
+                await closeGame(interaction);
+                break;
         }
     } catch (error) {
         console.error('Mines button error:', error);
@@ -109,6 +112,22 @@ async function handleButton(interaction, params) {
 
 async function startGame(interaction) {
     const userId = interaction.user.id;
+    
+    // Check if user already has an active game
+    if (activeGames.has(userId)) {
+        const reply = {
+            content: '❌ You already have an active Mines game! Use the "🚪 Close Game" button to end your current session first.',
+            flags: 64
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
+        return;
+    }
+    
     const balance = await getUserBalance(userId);
 
     if (balance < 1000) {
@@ -465,15 +484,19 @@ async function updateGameBoard(interaction, gameState) {
         rows.push(row);
     }
 
-    // Add cashout button in separate row
-    const cashoutRow = new ActionRowBuilder()
+    // Add control buttons (cashout and close)
+    const controlRow = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
                 .setCustomId('mines_cashout')
                 .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                .setStyle(ButtonStyle.Success)
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId('mines_close')
+                .setLabel('🚪 Close Game')
+                .setStyle(ButtonStyle.Danger)
         );
-    rows.push(cashoutRow);
+    rows.push(controlRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
@@ -625,6 +648,42 @@ async function cashOut(interaction) {
     rows.push(newGameRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
+}
+
+async function closeGame(interaction) {
+    const userId = interaction.user.id;
+    
+    if (!activeGames.has(userId)) {
+        const reply = {
+            content: '❌ You don\'t have an active Mines game to close.',
+            flags: 64
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
+        return;
+    }
+    
+    // Remove the active game
+    activeGames.delete(userId);
+    
+    const embed = new EmbedBuilder()
+        .setTitle('🚪 Game Closed')
+        .setDescription('Your Mines game has been closed. You can start a new game anytime!')
+        .setColor('#6c757d');
+    
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('mines_newgame')
+                .setLabel('🎮 Start New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+    
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
 module.exports = { handleButton, startGame, cashOut };

@@ -54,7 +54,7 @@ async function handleButton(interaction, params) {
     const [action, ...data] = params;
 
     try {
-        // Ensure this is a button interaction and can be deferred
+        // Improved interaction handling - check if it's a button and defer properly
         if (interaction.isButton && interaction.isButton() && !interaction.deferred && !interaction.replied) {
             await interaction.deferUpdate();
         }
@@ -73,6 +73,9 @@ async function handleButton(interaction, params) {
             case 'newgame':
                 await showBetSelection(interaction);
                 break;
+            case 'close':
+                await closeGame(interaction);
+                break;
         }
     } catch (error) {
         console.error('Slots button error:', error);
@@ -86,6 +89,10 @@ async function handleButton(interaction, params) {
 
 async function showBetSelection(interaction) {
     const userId = interaction.user.id;
+    
+    // Check if user already has an active game (for slots, we check if they're in a custom bet flow)
+    // Slots don't use persistent activeGames but we can check for interaction state
+    
     const balance = await getUserBalance(userId);
 
     if (balance < 1000) {
@@ -291,6 +298,23 @@ async function playSlots(interaction, betAmount) {
 
 async function startGame(interaction) {
     await showBetSelection(interaction);
+}
+
+async function closeGame(interaction) {
+    const embed = new EmbedBuilder()
+        .setTitle('🚪 Slots Closed')
+        .setDescription('Your slots session has been closed. You can start a new game anytime!')
+        .setColor('#6c757d');
+    
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('slots_newgame')
+                .setLabel('🎮 Start New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+    
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
 module.exports = { handleButton, startGame };

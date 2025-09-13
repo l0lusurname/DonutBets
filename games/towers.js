@@ -92,6 +92,9 @@ async function handleButton(interaction, params) {
             case 'newgame':
                 await startGame(interaction);
                 break;
+            case 'close':
+                await closeGame(interaction);
+                break;
         }
     } catch (error) {
         console.error('Towers button error:', error);
@@ -105,6 +108,22 @@ async function handleButton(interaction, params) {
 
 async function startGame(interaction) {
     const userId = interaction.user.id;
+    
+    // Check if user already has an active game
+    if (activeGames.has(userId)) {
+        const reply = {
+            content: '❌ You already have an active Towers game! Use the "🚪 Close Game" button to end your current session first.',
+            flags: 64
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
+        return;
+    }
+    
     const balance = await getUserBalance(userId);
 
     if (balance < 1000) {
@@ -412,16 +431,26 @@ async function updateTowersBoard(interaction, gameState) {
         rows.push(currentLevelRow);
     }
 
-    // Cashout button if player has progressed
+    // Control buttons (cashout if progressed, and close game)
+    const controlButtons = [];
     if (gameState.currentLevel > 0) {
-        const cashoutRow = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('towers_cashout')
-                    .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                    .setStyle(ButtonStyle.Success)
-            );
-        rows.push(cashoutRow);
+        controlButtons.push(
+            new ButtonBuilder()
+                .setCustomId('towers_cashout')
+                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                .setStyle(ButtonStyle.Success)
+        );
+    }
+    controlButtons.push(
+        new ButtonBuilder()
+            .setCustomId('towers_close')
+            .setLabel('🚪 Close Game')
+            .setStyle(ButtonStyle.Danger)
+    );
+    
+    if (controlButtons.length > 0) {
+        const controlRow = new ActionRowBuilder().addComponents(...controlButtons);
+        rows.push(controlRow);
     }
 
     await interaction.editReply({ embeds: [embed], components: rows });
@@ -638,6 +667,42 @@ async function cashOut(interaction) {
                 .setStyle(ButtonStyle.Primary)
         );
 
+    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
+}
+
+async function closeGame(interaction) {
+    const userId = interaction.user.id;
+    
+    if (!activeGames.has(userId)) {
+        const reply = {
+            content: '❌ You don\'t have an active Towers game to close.',
+            flags: 64
+        };
+        
+        if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply);
+        } else {
+            await interaction.reply(reply);
+        }
+        return;
+    }
+    
+    // Remove the active game
+    activeGames.delete(userId);
+    
+    const embed = new EmbedBuilder()
+        .setTitle('🚪 Game Closed')
+        .setDescription('Your Towers game has been closed. You can start a new game anytime!')
+        .setColor('#6c757d');
+    
+    const newGameRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('towers_newgame')
+                .setLabel('🎮 Start New Game')
+                .setStyle(ButtonStyle.Primary)
+        );
+    
     await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
