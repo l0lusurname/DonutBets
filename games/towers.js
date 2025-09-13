@@ -324,6 +324,11 @@ async function setupGame(interaction, betAmount, difficulty) {
     const userId = interaction.user.id;
     const balance = await getUserBalance(userId);
 
+    // Defer the interaction if not already done
+    if (!interaction.deferred && !interaction.replied) {
+        await interaction.deferUpdate();
+    }
+
     if (balance < betAmount) {
         await interaction.editReply({ content: 'Insufficient balance!', components: [] });
         return;
@@ -451,8 +456,11 @@ async function selectTile(interaction, level, block) {
     const userId = interaction.user.id;
     const gameState = activeGames.get(userId);
 
-    if (!gameState || !gameState.gameActive || level !== gameState.currentLevel) {
+    if (!interaction.deferred && !interaction.replied) {
         await interaction.deferUpdate();
+    }
+
+    if (!gameState || !gameState.gameActive || level !== gameState.currentLevel) {
         return;
     }
 
@@ -607,8 +615,11 @@ async function cashOut(interaction) {
     const userId = interaction.user.id;
     const gameState = activeGames.get(userId);
 
-    if (!gameState || !gameState.gameActive || gameState.currentLevel === 0) {
+    if (!interaction.deferred && !interaction.replied) {
         await interaction.deferUpdate();
+    }
+
+    if (!gameState || !gameState.gameActive || gameState.currentLevel === 0) {
         return;
     }
 
