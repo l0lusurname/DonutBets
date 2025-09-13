@@ -55,15 +55,11 @@ function parseFormattedNumber(input) {
 
 async function handleButton(interaction, params) {
     const [action, ...data] = params;
-    console.log(`[TOWERS DEBUG] handleButton called - action: ${action}, data: ${data}, userId: ${interaction.user.id}`);
 
     try {
         // Handle interaction deferral consistently
-        console.log(`[TOWERS DEBUG] Checking interaction state - deferred: ${interaction.deferred}, replied: ${interaction.replied}`);
         if (!interaction.deferred && !interaction.replied) {
-            console.log(`[TOWERS DEBUG] Deferring interaction...`);
             await interaction.deferUpdate();
-            console.log(`[TOWERS DEBUG] Interaction deferred successfully`);
         }
 
         switch (action) {
@@ -81,17 +77,11 @@ async function handleButton(interaction, params) {
                 await handleDifficultySelection(interaction, data[0]);
                 break;
             case 'game':
-                console.log(`[TOWERS DEBUG] Starting game case...`);
                 const userId = interaction.user.id;
                 const gameState = activeGames.get(userId);
-                console.log(`[TOWERS DEBUG] Retrieved gameState:`, gameState);
-                console.log(`[TOWERS DEBUG] betAmount: ${gameState?.betAmount}, difficulty: ${gameState?.difficulty}`);
                 if (gameState && gameState.betAmount && gameState.difficulty) {
-                    console.log(`[TOWERS DEBUG] Valid game state, calling setupGame...`);
                     await setupGame(interaction, gameState.betAmount, gameState.difficulty);
-                    console.log(`[TOWERS DEBUG] setupGame completed`);
                 } else {
-                    console.log(`[TOWERS DEBUG] Invalid game state, showing error...`);
                     // Keep the selection UI and show an error message
                     await interaction.followUp({ 
                         content: 'Please select both a bet amount and difficulty before starting the game!', 
