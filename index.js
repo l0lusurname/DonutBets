@@ -12,8 +12,8 @@ const client = new Client({
 });
 
 // Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http') 
-    ? process.env.SUPABASE_URL 
+const supabaseUrl = process.env.SUPABASE_URL && process.env.SUPABASE_URL.startsWith('http')
+    ? process.env.SUPABASE_URL
     : 'https://vfltbqpabgvbbxuezaah.supabase.co';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
 
@@ -59,20 +59,20 @@ client.minecraftBot = minecraftBot;
 
 client.once(Events.ClientReady, async readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-    
+
     // Register slash commands with Discord
     try {
         const commands = [];
         for (const [name, command] of client.commands) {
             commands.push(command.data.toJSON());
         }
-        
+
         await client.application.commands.set(commands);
         console.log(`Successfully registered ${commands.length} slash commands.`);
     } catch (error) {
         console.error('Error registering commands:', error);
     }
-    
+
     // Start Minecraft bot connection after Discord is ready
     console.log('🎮 Starting Minecraft bot connection...');
     minecraftBot.connect();
@@ -82,33 +82,33 @@ client.once(Events.ClientReady, async readyClient => {
 client.on(Events.MessageCreate, async message => {
     // Ignore bot messages and DMs
     if (message.author.bot || !message.guild) return;
-    
+
     // Check for ?bankset command
     if (message.content.startsWith('?bankset ')) {
         // Check if user has administrator permissions or is bot owner
         const { PermissionFlagsBits } = require('discord.js');
         const isOwner = message.author.id === process.env.SERVER_OWNER_ID;
         const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
-        
+
         if (!isOwner && !isAdmin) {
             await message.reply('❌ Only administrators or the bot owner can set the casino bank balance.');
             return;
         }
-        
+
         const amountStr = message.content.slice(9).trim(); // Remove "?bankset "
-        
+
         if (!amountStr) {
             await message.reply('❌ Please specify an amount. Example: `?bankset 100m`');
             return;
         }
-        
+
         const amount = parseFormattedNumber(amountStr);
-        
+
         if (isNaN(amount) || amount < 0) {
             await message.reply('❌ Invalid amount. Please use a positive number with optional K/M/B suffix.');
             return;
         }
-        
+
         try {
             console.log(`Setting casino bank balance to: ${amount}`);
             const { setCasinoBankBalance, formatCurrency } = require('./utils/database');
@@ -120,46 +120,46 @@ client.on(Events.MessageCreate, async message => {
             await message.reply('❌ Failed to set casino bank balance. Please try again.');
         }
     }
-    
-    // Check for ?reload command  
+
+    // Check for ?reload command
     else if (message.content.startsWith('?reload')) {
         // Check if user has administrator permissions or is bot owner
         const { PermissionFlagsBits } = require('discord.js');
         const isOwner = message.author.id === process.env.SERVER_OWNER_ID;
         const isAdmin = message.member?.permissions.has(PermissionFlagsBits.Administrator);
-        
+
         if (!isOwner && !isAdmin) {
             await message.reply('❌ Only administrators or the bot owner can reload commands.');
             return;
         }
-        
+
         try {
             const loadingMsg = await message.reply('🔄 Reloading slash commands...');
-            
+
             // Clear existing commands from Discord
             await client.application.commands.set([]);
-            
+
             // Reload commands from files
             client.commands.clear();
             const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-            
+
             const commands = [];
             for (const file of commandFiles) {
                 const filePath = path.join(commandsPath, file);
-                
+
                 // Clear require cache to reload the file
                 delete require.cache[require.resolve(filePath)];
-                
+
                 const command = require(filePath);
                 if ('data' in command && 'execute' in command) {
                     client.commands.set(command.data.name, command);
                     commands.push(command.data.toJSON());
                 }
             }
-            
+
             // Register commands with Discord
             await client.application.commands.set(commands);
-            
+
             await loadingMsg.edit(`✅ Successfully reloaded ${commands.length} slash commands!\n\nCommands registered: ${commands.map(cmd => `\`/${cmd.name}\``).join(', ')}`);
         } catch (error) {
             console.error('Error reloading commands:', error);
@@ -171,14 +171,14 @@ client.on(Events.MessageCreate, async message => {
 // Parse formatted numbers with K/M/B suffixes
 function parseFormattedNumber(input) {
     if (typeof input === 'number') return input;
-    
+
     const str = input.toString().toLowerCase().replace(/,/g, '');
     const num = parseFloat(str);
-    
+
     if (str.includes('k')) return Math.floor(num * 1000);
     if (str.includes('m')) return Math.floor(num * 1000000);
     if (str.includes('b')) return Math.floor(num * 1000000000);
-    
+
     return Math.floor(num);
 }
 
@@ -210,11 +210,11 @@ function ensureInGamblingRoom(interaction, gameName) {
         safeReply(interaction, { embeds: [embed] });
         return false;
     }
-    
+
     const channelName = interaction.channel.name;
     const username = interaction.user.username.toLowerCase();
     const expectedChannelName = `gambling-${username}`;
-    
+
     if (channelName !== expectedChannelName) {
         const embed = new EmbedBuilder()
             .setTitle('🚫 Wrong Channel!')
@@ -226,7 +226,7 @@ function ensureInGamblingRoom(interaction, gameName) {
         safeReply(interaction, { embeds: [embed] });
         return false;
     }
-    
+
     return true;
 }
 
@@ -247,7 +247,7 @@ client.on(Events.InteractionCreate, async interaction => {
         // Handle chat input commands
         if (interaction.isChatInputCommand()) {
             console.log(`Command used: ${interaction.commandName} by ${interaction.user.username} (${interaction.user.id})`);
-            
+
             const command = interaction.client.commands.get(interaction.commandName);
 
             if (!command) {
@@ -270,16 +270,16 @@ client.on(Events.InteractionCreate, async interaction => {
             await command.execute(interaction);
             console.log(`Command ${interaction.commandName} completed successfully`);
         }
-        
+
         // Handle button interactions
         else if (interaction.isButton()) {
             console.log('Button clicked:', interaction.customId);
             const [game, action, ...params] = interaction.customId.split('_');
             console.log('Parsed button:', { game, action, params });
-            
+
             // Ensure user exists in database before processing
             await ensureUserExists(interaction.user.id, interaction.user.username);
-            
+
             // Check if gambling button interactions are used in proper gambling channel
             const gamblingGames = ['mines', 'towers', 'crash', 'slots'];
             if (gamblingGames.includes(game)) {
@@ -287,31 +287,31 @@ client.on(Events.InteractionCreate, async interaction => {
                     return; // Early return if not in gambling room
                 }
             }
-            
+
             // Handle gambling room creation
             if (game === 'gambling' && action === 'create' && params[0] === 'room') {
                 const { PermissionFlagsBits } = require('discord.js');
-                
+
                 // Check if user already has a gambling channel
                 const existingChannel = interaction.guild.channels.cache.find(
                     channel => channel.name === `gambling-${interaction.user.username.toLowerCase()}` && channel.type === 0
                 );
-                
+
                 if (existingChannel) {
                     await interaction.reply({ content: `You already have a gambling room: ${existingChannel}`, ephemeral: true });
                     return;
                 }
-                
+
                 // Find gambling category
                 const category = interaction.guild.channels.cache.find(
                     channel => channel.name === '🎰 GAMBLING' && channel.type === 4
                 );
-                
+
                 if (!category) {
                     await interaction.reply({ content: 'Gambling category not found. Please run `/setup` first.', ephemeral: true });
                     return;
                 }
-                
+
                 // Create private gambling channel for user
                 const gamblingChannel = await interaction.guild.channels.create({
                     name: `gambling-${interaction.user.username.toLowerCase()}`,
@@ -333,24 +333,42 @@ client.on(Events.InteractionCreate, async interaction => {
                         },
                     ],
                 });
-                
-                const { EmbedBuilder } = require('discord.js');
+
+                // Create welcome message for new gambling room
                 const welcomeEmbed = new EmbedBuilder()
-                    .setTitle('🎰 Your Private Gambling Room!')
-                    .setDescription('Welcome to your personal gambling space! Use the commands below to start playing.')
-                    .setColor('#FFD700')
+                    .setTitle(`🎰 Welcome to ${interaction.user.username}'s Gambling Room!`)
+                    .setDescription('This is your **private gambling space**! Here\'s everything you need to know to get started.')
                     .addFields(
-                        { name: '🎮 Game Commands', value: '`/mines` - Play Mines\n`/towers` - Play Towers\n`/crash` - Play Crash\n`/slots` - Play Slots', inline: true },
-                        { name: '💰 Account Commands', value: '`/balance` - Check balance\n`Open a ticket` - Add credits\n`/withdraw` - Request withdrawal', inline: true }
+                        {
+                            name: '🎮 **Game Commands**',
+                            value: '**`/mines`** - Reveal tiles on a minefield (avoid bombs for bigger wins!)\n**`/towers`** - Climb difficulty levels for increasing multipliers\n**`/crash`** - Watch the multiplier rise and cash out before it crashes\n**`/slots`** - Spin the classic 3x3 slot machine for combinations',
+                            inline: false
+                        },
+                        {
+                            name: '💰 **Money Management**',
+                            value: '**`/balance`** - Check your current credit balance\n**`/deposit`** - Get instructions to add credits via Minecraft\n**`/withdraw`** - Request to withdraw credits to your Minecraft account\n**`/link`** - Link your Minecraft account (required for deposits/withdrawals)',
+                            inline: false
+                        },
+                        {
+                            name: '📊 **Additional Features**',
+                            value: '**`/history`** - View your last 10 game results\n**`/seedcheck`** - Verify any game was provably fair using seeds',
+                            inline: false
+                        },
+                        {
+                            name: '🚀 **Getting Started**',
+                            value: '1️⃣ Use `/link <minecraft_username>` to connect accounts\n2️⃣ Use `/deposit` to add credits via Minecraft payments\n3️⃣ Start gambling with any game command!\n4️⃣ Use `/withdraw` when you want to cash out',
+                            inline: false
+                        }
                     )
-                    .setFooter({ text: 'Good luck and gamble responsibly!' })
+                    .setColor('#FFD700')
+                    .setFooter({ text: '🎲 All games use cryptographic seeds for fairness • Have fun and gamble responsibly!' })
                     .setTimestamp();
-                
+
                 await gamblingChannel.send({ embeds: [welcomeEmbed] });
                 await interaction.reply({ content: `Your gambling room has been created: ${gamblingChannel}`, ephemeral: true });
                 return;
             }
-            
+
             switch (game) {
                 case 'mines':
                     const minesHandler = require('./games/mines');
@@ -374,11 +392,11 @@ client.on(Events.InteractionCreate, async interaction => {
                     break;
             }
         }
-        
+
         // Handle modal submissions
         else if (interaction.isModalSubmit()) {
             const [action, type] = interaction.customId.split('_');
-            
+
             if (action === 'withdraw' && type === 'modal') {
                 const withdrawHandler = require('./utils/withdraw');
                 await withdrawHandler.handleModal(interaction);

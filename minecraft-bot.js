@@ -9,13 +9,13 @@ class MinecraftBot {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 50;
         this.reconnectDelay = 5000; // 5 seconds initial delay
-        
+
         // Initialize Supabase
         this.supabase = createClient(
             process.env.SUPABASE_URL || 'https://vfltbqpabgvbbxuezaah.supabase.co',
             process.env.SUPABASE_ANON_KEY || ''
         );
-        
+
         console.log('Minecraft bot initialized');
     }
 
@@ -27,10 +27,10 @@ class MinecraftBot {
 
         try {
             const hasCredentials = process.env.MC_USERNAME && process.env.MC_PASSWORD;
-            
+
             if (hasCredentials) {
                 console.log(`Connecting to donutsmp.net as ${process.env.MC_USERNAME} (premium device-code auth)...`);
-                
+
                 // Use device-code auth (removes password to avoid PPFT error)
                 this.bot = mineflayer.createBot({
                     host: 'donutsmp.net',
@@ -42,7 +42,7 @@ class MinecraftBot {
                 });
             } else {
                 console.log('⚠️  No MC credentials found, connecting in offline mode...');
-                
+
                 this.bot = mineflayer.createBot({
                     host: 'donutsmp.net',
                     port: 25565,
@@ -99,13 +99,13 @@ class MinecraftBot {
         this.bot.on('kicked', (reason) => {
             console.log('👢 Minecraft bot was kicked:', reason);
             this.isConnected = false;
-            
+
             // If kicked, try offline mode next time
             if (reason && reason.includes('premium')) {
                 console.log('🔄 Kicked for premium account, will try offline mode...');
                 this.authFailed = true;
             }
-            
+
             this.scheduleReconnect();
         });
     }
@@ -115,7 +115,7 @@ class MinecraftBot {
         console.log('💬 Minecraft chat:', text);
 
         // Log all chat messages for debugging
-        await this.logEvent('chat_message', text, { 
+        await this.logEvent('chat_message', text, {
             message: text,
             messageObject: message,
             timestamp: new Date().toISOString()
@@ -126,15 +126,15 @@ class MinecraftBot {
         // This prevents players from spoofing payments by typing fake messages
         if (message.extra || message.translate || (message.color && message.color !== 'white')) {
             // This looks like a system message - proceed with payment detection
-            
+
             // Parse payment messages (e.g., "PlayerName paid you $500.50" or "PlayerName paid you $1K")
             const paymentRegex = /^(\w+) paid you \$?([\d,]+\.?\d*[KMB]?)/i;
             const match = text.match(paymentRegex);
-            
+
             if (match) {
                 const [, playerName, amountStr] = match;
                 let amount = parseFloat(amountStr.replace(/,/g, ''));
-                
+
                 // Handle K, M, B suffixes
                 const upperAmount = amountStr.toUpperCase();
                 if (upperAmount.includes('K')) {
@@ -144,9 +144,9 @@ class MinecraftBot {
                 } else if (upperAmount.includes('B')) {
                     amount = amount * 1000000000;
                 }
-                
+
                 console.log(`💰 System payment detected: ${playerName} paid $${amount} (original: ${amountStr})`);
-                
+
                 await this.handlePayment(playerName, amount, text);
             }
         } else {
@@ -159,7 +159,7 @@ class MinecraftBot {
         try {
             // Convert to cents for precision
             const amountCents = Math.round(amount * 100);
-            
+
             // Log the payment event
             await this.logEvent('payment_received', rawMessage, {
                 player_name: playerName,
@@ -172,7 +172,7 @@ class MinecraftBot {
 
             // Check for pending verifications and deposits
             await this.processPayment(playerName.toLowerCase(), amountCents, rawMessage);
-            
+
         } catch (error) {
             console.error('Error handling payment:', error);
         }
@@ -224,7 +224,7 @@ class MinecraftBot {
             // Update account status to verified
             const { error: updateError } = await this.supabase
                 .from('linked_accounts')
-                .update({ 
+                .update({
                     status: 'Verified',
                     updated_at: new Date().toISOString()
                 })
@@ -248,7 +248,35 @@ class MinecraftBot {
                 .eq('amount_cents', verificationData.verify_amount_cents)
                 .eq('status', 'Pending');
 
-            console.log(`🎉 Account verification completed: ${verificationData.mc_username} -> Discord ${verificationData.discord_user_id}`);
+            console.log(`✅ Account verified: ${verificationData.mc_username} -> Discord ${verificationData.discord_user_id}`);
+
+            // Send confirmation message to Discord user
+            try {
+                const user = await this.client.users.fetch(verificationData.discord_user_id);
+                if (user) {
+                    const { EmbedBuilder } = require('discord.js');
+                    const confirmEmbed = new EmbedBuilder()
+                        .setColor('#4CAF50')
+                        .setTitle('🔗 Account Successfully Linked!')
+                        .setDescription(`Your accounts have been successfully connected!`)
+                        .addFields(
+                            { name: '🎮 Minecraft Account', value: verificationData.mc_username, inline: true },
+                            { name: '💬 Discord Account', value: `<@${verificationData.discord_user_id}>`, inline: true },
+                            { name: '✅ Status', value: 'Verified & Active', inline: true }
+                        )
+                        .addFields({
+                            name: '🎰 What\'s Next?',
+                            value: '• Use `/deposit` to see how to add credits\n• Create your gambling room to start playing\n• Use `/balance` to check your credits',
+                            inline: false
+                        })
+                        .setFooter({ text: 'You can now deposit and withdraw funds!' })
+                        .setTimestamp();
+
+                    await user.send({ embeds: [confirmEmbed] });
+                }
+            } catch (dmError) {
+                console.log('Could not send verification confirmation DM:', dmError.message);
+            }
 
         } catch (error) {
             console.error('Error completing verification:', error);
@@ -275,7 +303,7 @@ class MinecraftBot {
             const creditsToAdd = Math.floor(amountCents / 100);
             const { error: balanceError } = await this.supabase
                 .from('users')
-                .update({ 
+                .update({
                     balance: currentUser.balance + creditsToAdd
                 })
                 .eq('id', linkedAccount.discord_user_id);
@@ -354,9 +382,9 @@ class MinecraftBot {
 
         this.reconnectAttempts++;
         const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 300000); // Max 5 min
-        
+
         console.log(`🔄 Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`);
-        
+
         setTimeout(() => {
             this.connectWithFallback();
         }, delay);
