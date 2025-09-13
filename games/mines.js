@@ -183,15 +183,10 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Danger)
         );
 
-    const closeRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder().setCustomId('mines_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
-        );
-
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2, closeRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2, closeRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, mineRow1, mineRow2] });
     }
 }
 

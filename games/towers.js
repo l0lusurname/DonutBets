@@ -172,15 +172,10 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('towers_difficulty_hard').setLabel('🔴 Hard: 4 blocks, 1 safe').setStyle(ButtonStyle.Danger)
         );
 
-    const closeRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder().setCustomId('towers_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
-        );
-
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, difficultyRow, closeRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, difficultyRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow, difficultyRow, closeRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow, difficultyRow] });
     }
 }
 

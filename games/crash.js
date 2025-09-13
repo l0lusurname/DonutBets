@@ -151,15 +151,10 @@ async function startGame(interaction) {
             new ButtonBuilder().setCustomId('crash_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
         );
 
-    const closeRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder().setCustomId('crash_close').setLabel('🚪 Close Gambling Room').setStyle(ButtonStyle.Danger)
-        );
-
     if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow, closeRow] });
+        await interaction.editReply({ embeds: [embed], components: [betRow, customRow] });
     } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow, closeRow] });
+        await interaction.reply({ embeds: [embed], components: [betRow, customRow] });
     }
 }
 
