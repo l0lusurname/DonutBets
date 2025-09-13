@@ -606,4 +606,4 @@ async function cashOut(interaction) {
     await interaction.editReply({ embeds: [embed], components: [newGameRow] });
 }
 
-module.exports = { handleButton, startGame };
+module.exports = { handleButton, startGame, parseFormattedNumber };
