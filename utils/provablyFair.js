@@ -36,15 +36,15 @@ function verifySeed(serverSeed, clientSeed, nonce, expectedHash) {
     return hash === expectedHash;
 }
 
-// Generate mines positions for Mines game (4x4 grid)
+// Generate mines positions for Mines game (5x5 grid)
 function generateMinesResults(seed, mineCount) {
     // Validate mine count
     if (mineCount < 1) mineCount = 1;
-    if (mineCount > 15) mineCount = 15; // Max 15 mines in 16-tile grid (leave at least 1 safe)
+    if (mineCount > 24) mineCount = 24; // Max 24 mines in 25-tile grid (leave at least 1 safe)
 
     // Create array of all possible positions
     const allPositions = [];
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 25; i++) {
         allPositions.push(i);
     }
 
@@ -184,7 +184,7 @@ async function generateCrashMultiplier(seed, houseEdge = null) {
 async function calculateMinesMultiplier(mineCount, tilesRevealed, houseEdge = null) {
     if (tilesRevealed === 0) return 1;
 
-    const totalTiles = 16; // 4x4 grid = 16 tiles
+    const totalTiles = 25; // 5x5 grid = 25 tiles
 
     // Get configurable house edge if not provided
     if (houseEdge === null) {

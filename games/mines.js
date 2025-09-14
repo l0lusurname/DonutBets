@@ -139,7 +139,7 @@ async function startGame(interaction) {
         .setColor('#FF4500')
         .addFields(
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
-            { name: '💣 Mines', value: 'Choose 1-15 mines', inline: true }
+            { name: '💣 Mines', value: 'Choose 1-24 mines', inline: true }
         );
 
     const betRow = new ActionRowBuilder()
@@ -167,7 +167,8 @@ async function startGame(interaction) {
 
     const mineRow2 = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('mines_mines_18').setLabel('18 💣').setStyle(ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(ButtonStyle.Danger)
         );
 
     if (interaction.replied || interaction.deferred) {
@@ -323,7 +324,8 @@ async function updateSelectionDisplay(interaction, gameState) {
 
     const mineRow2 = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('mines_mines_15').setLabel('15 💣').setStyle(gameState.mineCount === 15 ? ButtonStyle.Success : ButtonStyle.Danger)
+            new ButtonBuilder().setCustomId('mines_mines_18').setLabel('18 💣').setStyle(gameState.mineCount === 18 ? ButtonStyle.Success : ButtonStyle.Danger),
+            new ButtonBuilder().setCustomId('mines_mines_24').setLabel('24 💣').setStyle(gameState.mineCount === 24 ? ButtonStyle.Success : ButtonStyle.Danger)
         );
 
     // Add start game button if both selections are made
@@ -373,14 +375,15 @@ async function setupGame(interaction, betAmount, mineCount) {
         .addFields(
             { name: '💰 Bet Amount', value: formatCurrency(betAmount), inline: true },
             { name: '💣 Mines', value: mineCount.toString(), inline: true },
-            { name: '💎 Safe Tiles', value: (16 - mineCount).toString(), inline: true }
+            { name: '💎 Safe Tiles', value: (25 - mineCount).toString(), inline: true }
         );
 
     const rows = [];
+    // Create 4 rows of 5 tiles each (20 tiles)
     for (let i = 0; i < 4; i++) {
         const row = new ActionRowBuilder();
-        for (let j = 0; j < 4; j++) {
-            const tileNumber = i * 4 + j;
+        for (let j = 0; j < 5; j++) {
+            const tileNumber = i * 5 + j;
             row.addComponents(
                 new ButtonBuilder()
                     .setCustomId(`mines_tile_${tileNumber}`)
@@ -391,15 +394,24 @@ async function setupGame(interaction, betAmount, mineCount) {
         rows.push(row);
     }
 
-    // Add cashout button row
-    const cashoutRow = new ActionRowBuilder()
-        .addComponents(
+    // Add 5th row with 4 tiles and cashout button (5 tiles: 20-24)
+    const finalRow = new ActionRowBuilder();
+    for (let j = 0; j < 4; j++) {
+        const tileNumber = 20 + j;
+        finalRow.addComponents(
             new ButtonBuilder()
-                .setCustomId('mines_cashout')
-                .setLabel('💰 Cash Out')
-                .setStyle(ButtonStyle.Success)
+                .setCustomId(`mines_tile_${tileNumber}`)
+                .setLabel('?')
+                .setStyle(ButtonStyle.Secondary)
         );
-    rows.push(cashoutRow);
+    }
+    finalRow.addComponents(
+        new ButtonBuilder()
+            .setCustomId('mines_cashout')
+            .setLabel('💰 Cash Out')
+            .setStyle(ButtonStyle.Success)
+    );
+    rows.push(finalRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
@@ -427,17 +439,11 @@ async function revealTile(interaction, tileNumber) {
 
 async function updateGameBoard(interaction, gameState) {
     const revealedSafeTiles = gameState.revealedTiles.size;
-    const totalSafeTiles = 16 - gameState.mineCount;
+    const totalSafeTiles = 25 - gameState.mineCount;
 
-    // Better multiplier calculation based on mine count and tiles revealed
-    let baseMultiplier;
-    if (gameState.mineCount === 1) baseMultiplier = 1.05;
-    else if (gameState.mineCount <= 3) baseMultiplier = 1.12;
-    else if (gameState.mineCount <= 5) baseMultiplier = 1.18;
-    else if (gameState.mineCount <= 10) baseMultiplier = 1.25;
-    else baseMultiplier = 1.35;
-
-    const multiplier = Math.pow(baseMultiplier, revealedSafeTiles);
+    // Use the proper multiplier calculation for 5x5 grid
+    const { calculateMinesMultiplier } = require('../utils/provablyFair');
+    const multiplier = await calculateMinesMultiplier(gameState.mineCount, revealedSafeTiles);
     const potentialWin = Math.floor(gameState.betAmount * multiplier);
 
     const embed = new EmbedBuilder()
@@ -454,11 +460,11 @@ async function updateGameBoard(interaction, gameState) {
 
     const rows = [];
 
-    // Create 4x4 grid (16 tiles)
+    // Create 4 rows of 5 tiles each (20 tiles)
     for (let i = 0; i < 4; i++) {
         const row = new ActionRowBuilder();
-        for (let j = 0; j < 4; j++) {
-            const tileNumber = i * 4 + j;
+        for (let j = 0; j < 5; j++) {
+            const tileNumber = i * 5 + j;
             const isRevealed = gameState.revealedTiles.has(tileNumber);
             row.addComponents(
                 new ButtonBuilder()
@@ -471,15 +477,26 @@ async function updateGameBoard(interaction, gameState) {
         rows.push(row);
     }
 
-    // Add cashout button
-    const controlRow = new ActionRowBuilder()
-        .addComponents(
+    // Add 5th row with 4 tiles and cashout button (5 tiles: 20-24)
+    const finalRow = new ActionRowBuilder();
+    for (let j = 0; j < 4; j++) {
+        const tileNumber = 20 + j;
+        const isRevealed = gameState.revealedTiles.has(tileNumber);
+        finalRow.addComponents(
             new ButtonBuilder()
-                .setCustomId('mines_cashout')
-                .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-                .setStyle(ButtonStyle.Success)
+                .setCustomId(`mines_tile_${tileNumber}`)
+                .setLabel(isRevealed ? '💎' : '?')
+                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
+                .setDisabled(isRevealed)
         );
-    rows.push(controlRow);
+    }
+    finalRow.addComponents(
+        new ButtonBuilder()
+            .setCustomId('mines_cashout')
+            .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+            .setStyle(ButtonStyle.Success)
+    );
+    rows.push(finalRow);
 
     await interaction.editReply({ embeds: [embed], components: rows });
 }
@@ -500,12 +517,12 @@ async function gameOver(interaction, gameState, hitMine) {
             { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
 
-    // Create revealed board showing all mines and diamonds
+    // Create revealed board showing all mines and diamonds (5x5 grid)
     const rows = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         const row = new ActionRowBuilder();
-        for (let j = 0; j < 4; j++) {
-            const tileNumber = i * 4 + j;
+        for (let j = 0; j < 5; j++) {
+            const tileNumber = i * 5 + j;
             const isMine = gameState.minePositions.includes(tileNumber);
             const isHitMine = tileNumber === hitMine;
             
@@ -519,16 +536,6 @@ async function gameOver(interaction, gameState, hitMine) {
         }
         rows.push(row);
     }
-
-    // Add new game button
-    const newGameRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('mines_newgame')
-                .setLabel('🎮 New Game')
-                .setStyle(ButtonStyle.Primary)
-        );
-    rows.push(newGameRow);
 
     // Update casino bank balance (casino gains the bet amount on user loss)
     await updateCasinoBankBalance(gameState.betAmount);
@@ -544,6 +551,22 @@ async function gameOver(interaction, gameState, hitMine) {
     );
 
     await interaction.editReply({ embeds: [embed], components: rows });
+    
+    // Send new game button as separate message to avoid row limit
+    setTimeout(async () => {
+        try {
+            const newGameRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('mines_newgame')
+                        .setLabel('🎮 New Game')
+                        .setStyle(ButtonStyle.Primary)
+                );
+            await interaction.followUp({ content: 'Ready for another round?', components: [newGameRow] });
+        } catch (error) {
+            console.error('Error sending new game follow-up:', error);
+        }
+    }, 1000);
 }
 
 async function cashOut(interaction) {
@@ -557,15 +580,9 @@ async function cashOut(interaction) {
     gameState.gameActive = false;
     const revealedSafeTiles = gameState.revealedTiles.size;
 
-    // Better multiplier calculation based on mine count and tiles revealed
-    let baseMultiplier;
-    if (gameState.mineCount === 1) baseMultiplier = 1.05;
-    else if (gameState.mineCount <= 3) baseMultiplier = 1.12;
-    else if (gameState.mineCount <= 5) baseMultiplier = 1.18;
-    else if (gameState.mineCount <= 10) baseMultiplier = 1.25;
-    else baseMultiplier = 1.35;
-
-    const multiplier = Math.pow(baseMultiplier, revealedSafeTiles);
+    // Use the proper multiplier calculation for 5x5 grid
+    const { calculateMinesMultiplier } = require('../utils/provablyFair');
+    const multiplier = await calculateMinesMultiplier(gameState.mineCount, revealedSafeTiles);
     const winAmount = Math.floor(gameState.betAmount * multiplier);
     const profit = winAmount - gameState.betAmount;
 
@@ -590,12 +607,12 @@ async function cashOut(interaction) {
             { name: '🔐 Hash', value: `\`${gameState.seed.hash}\``, inline: false }
         );
 
-    // Create revealed board showing all mines and diamonds (same as gameOver)
+    // Create revealed board showing all mines and diamonds (5x5 grid)
     const rows = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         const row = new ActionRowBuilder();
-        for (let j = 0; j < 4; j++) {
-            const tileNumber = i * 4 + j;
+        for (let j = 0; j < 5; j++) {
+            const tileNumber = i * 5 + j;
             const isMine = gameState.minePositions.includes(tileNumber);
             const wasRevealed = gameState.revealedTiles.has(tileNumber);
             
@@ -658,15 +675,23 @@ async function closeGame(interaction) {
         .setDescription('Your Mines game has been closed. You can start a new game anytime!')
         .setColor('#6c757d');
     
-    const newGameRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('mines_newgame')
-                .setLabel('🎮 Start New Game')
-                .setStyle(ButtonStyle.Primary)
-        );
+    await interaction.editReply({ embeds: [embed], components: rows });
     
-    await interaction.editReply({ embeds: [embed], components: [newGameRow] });
+    // Send new game button as separate message to avoid row limit
+    setTimeout(async () => {
+        try {
+            const newGameRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('mines_newgame')
+                        .setLabel('🎮 Start New Game')
+                        .setStyle(ButtonStyle.Primary)
+                );
+            await interaction.followUp({ content: 'Well played! Ready for another round?', components: [newGameRow] });
+        } catch (error) {
+            console.error('Error sending new game follow-up:', error);
+        }
+    }, 1000);
 }
 
 module.exports = { handleButton, startGame, cashOut };
