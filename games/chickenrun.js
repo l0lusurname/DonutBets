@@ -160,7 +160,7 @@ async function handleDifficultySelection(interaction, difficulty) {
             difficultyData = {
                 name: '🟢 Easy',
                 description: 'Lower risk, steady growth',
-                crashChance: 0.15, // 15% instant crash
+                crashChance: 0.05, // 5% instant crash
                 multiplierBase: 0.20, // Higher base multiplier increase
                 multiplierGrowth: 0.06, // Faster growth per step
                 maxMultiplier: 12,
@@ -171,7 +171,7 @@ async function handleDifficultySelection(interaction, difficulty) {
             difficultyData = {
                 name: '🟡 Medium',
                 description: 'Balanced risk and reward',
-                crashChance: 0.25, // 25% instant crash
+                crashChance: 0.10, // 10% instant crash
                 multiplierBase: 0.15, // Original base
                 multiplierGrowth: 0.05, // Original growth
                 maxMultiplier: 10,
@@ -182,7 +182,7 @@ async function handleDifficultySelection(interaction, difficulty) {
             difficultyData = {
                 name: '🔴 Hard',
                 description: 'High risk, high reward',
-                crashChance: 0.35, // 35% instant crash
+                crashChance: 0.15, // 15% instant crash
                 multiplierBase: 0.10, // Lower base multiplier increase
                 multiplierGrowth: 0.08, // Higher growth per step (bigger jumps later)
                 maxMultiplier: 15,
@@ -193,7 +193,7 @@ async function handleDifficultySelection(interaction, difficulty) {
             difficultyData = {
                 name: '🟡 Medium',
                 description: 'Balanced risk and reward',
-                crashChance: 0.25,
+                crashChance: 0.10,
                 multiplierBase: 0.15,
                 multiplierGrowth: 0.05,
                 maxMultiplier: 10,
