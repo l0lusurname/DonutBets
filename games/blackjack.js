@@ -434,8 +434,18 @@ async function handleBlackjack(interaction, gameState) {
     gameState.gameActive = false;
     
     const dealerValue = calculateHandValue(gameState.dealerCards);
-    const winAmount = dealerValue === 21 ? gameState.betAmount : Math.floor(gameState.betAmount * 2.5); // Blackjack pays 3:2
-    const profit = winAmount - gameState.betAmount;
+    const dealerHasBlackjack = dealerValue === 21 && gameState.dealerCards.length === 2;
+    
+    let winAmount, profit;
+    if (dealerHasBlackjack) {
+        // Both have blackjack = Push (tie)
+        winAmount = gameState.betAmount;
+        profit = 0;
+    } else {
+        // Player blackjack vs dealer non-blackjack = 3:2 payout
+        winAmount = Math.floor(gameState.betAmount * 2.5);
+        profit = winAmount - gameState.betAmount;
+    }
     
     const currentBalance = await getUserBalance(gameState.userId);
     await updateUserBalance(gameState.userId, currentBalance + winAmount);
@@ -443,19 +453,19 @@ async function handleBlackjack(interaction, gameState) {
 
     const embed = new EmbedBuilder()
         .setTitle('♠️ BLACKJACK! 🎉')
-        .setDescription(dealerValue === 21 ? 'Push! Both have Blackjack!' : 'You got a natural blackjack!')
-        .setColor('#FFD700')
+        .setDescription(dealerHasBlackjack ? 'Push! Both have Blackjack!' : 'You got a natural blackjack!')
+        .setColor(dealerHasBlackjack ? '#FFD700' : '#00FF00')
         .addFields(
             { name: '🃏 Your Cards', value: `${formatCards(gameState.playerCards)}\n**Total: 21**`, inline: true },
             { name: '🏠 Dealer Cards', value: `${formatCards(gameState.dealerCards)}\n**Total: ${dealerValue}**`, inline: true },
-            { name: '💰 Result', value: dealerValue === 21 ? 'Push (Tie)' : `Won ${formatCurrency(winAmount)}!`, inline: true }
+            { name: '💰 Result', value: dealerHasBlackjack ? 'Push (Tie)' : `Won ${formatCurrency(winAmount)}! (3:2 payout)`, inline: true }
         );
 
     await logGame(
         gameState.userId,
         'Blackjack',
         gameState.betAmount,
-        dealerValue === 21 ? 'Push' : 'Win',
+        dealerHasBlackjack ? 'Push' : 'Win',
         winAmount,
         profit,
         gameState.seed.hash

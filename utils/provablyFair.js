@@ -192,24 +192,33 @@ async function generateChickenRunMultiplier(seed, crashFrequency = 0.05, houseEd
         houseEdge = settings.house_edge;
     }
 
-    // Use custom crash frequency based on difficulty
+    // Use custom crash frequency based on difficulty with proper normalization
     if (random < crashFrequency) {
-        // Instant crash (0x) - frequency depends on difficulty
+        // Instant crash (0x) - immediate loss before any steps
         return 0;
-    } else if (random < crashFrequency + 0.60) {
-        // 60% chance between 1.5x - 3x (good range for chicken theme)
-        const normalizedRandom = (random - crashFrequency) / 0.60;
-        return Math.floor((1.5 + normalizedRandom * 1.5) * 100) / 100;
-    } else if (random < crashFrequency + 0.85) {
-        // 25% chance between 3x - 6x (lucky range)
-        const normalizedRandom = (random - crashFrequency - 0.60) / 0.25;
-        return Math.floor((3 + normalizedRandom * 3) * 100) / 100;
     } else {
-        // 15% chance between 6x - 15x (very lucky, higher cap for hard difficulty)
-        const normalizedRandom = (random - crashFrequency - 0.85) / (1 - crashFrequency - 0.85);
-        const exponentialValue = Math.pow(normalizedRandom, 1.5); // Makes higher values rarer
-        const crashPoint = Math.floor((6 + exponentialValue * 9) * 100) / 100;
-        return Math.min(15, crashPoint); // Cap at 15x for balance
+        // Renormalize remaining probability after instant crashes
+        const u = (random - crashFrequency) / (1 - crashFrequency);
+        
+        if (u < 0.30) {
+            // 30% chance between 1.1x - 2x (challenging range)
+            const normalizedRandom = u / 0.30;
+            return Math.floor((1.1 + normalizedRandom * 0.9) * 100) / 100;
+        } else if (u < 0.50) {
+            // 20% chance between 2x - 4x (moderate range)
+            const normalizedRandom = (u - 0.30) / 0.20;
+            return Math.floor((2.0 + normalizedRandom * 2.0) * 100) / 100;
+        } else if (u < 0.75) {
+            // 25% chance between 4x - 8x (good range)
+            const normalizedRandom = (u - 0.50) / 0.25;
+            return Math.floor((4.0 + normalizedRandom * 4.0) * 100) / 100;
+        } else {
+            // 25% chance between 8x - 15x (very lucky range)
+            const normalizedRandom = (u - 0.75) / 0.25;
+            const exponentialValue = Math.pow(normalizedRandom, 1.8); // Makes higher values rarer
+            const crashPoint = Math.floor((8.0 + exponentialValue * 7.0) * 100) / 100;
+            return Math.min(15, crashPoint); // Cap at 15x for balance
+        }
     }
 }
 
