@@ -124,12 +124,12 @@ async function startGame(interaction) {
 
     const embed = new EmbedBuilder()
         .setTitle('🪙 Coinflip')
-        .setDescription('Choose heads or tails and double your bet!\n🎯 **50/50 chance • x2 multiplier**')
+        .setDescription('Choose heads or tails and win big!\n🎯 **50/50 chance • x1.96 multiplier**')
         .setColor('#FFD700')
         .addFields(
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
             { name: '🎲 Odds', value: '50% chance to win', inline: true },
-            { name: '📈 Multiplier', value: 'x2.00', inline: true }
+            { name: '📈 Multiplier', value: 'x1.96', inline: true }
         );
 
     const betRow = new ActionRowBuilder()
@@ -249,11 +249,11 @@ async function handleBetSelection(interaction, betAmount) {
     // Show choice buttons
     const embed = new EmbedBuilder()
         .setTitle('🪙 Choose Your Side!')
-        .setDescription(`Betting: **${formatCurrency(betAmount)}**\nPotential win: **${formatCurrency(betAmount * 2)}**\n\nChoose heads or tails!`)
+        .setDescription(`Betting: **${formatCurrency(betAmount)}**\nPotential win: **${formatCurrency(Math.floor(betAmount * 1.96))}**\n\nChoose heads or tails!`)
         .setColor('#FFD700')
         .addFields(
             { name: '🎲 Odds', value: '50% chance to win', inline: true },
-            { name: '📈 Multiplier', value: 'x2.00', inline: true },
+            { name: '📈 Multiplier', value: 'x1.96', inline: true },
             { name: '💰 Bet', value: formatCurrency(betAmount), inline: true }
         );
 
@@ -287,8 +287,9 @@ async function makeChoice(interaction, playerChoice) {
 
     let winAmount, profit;
     if (won) {
-        winAmount = gameState.betAmount * 2;
-        profit = gameState.betAmount;
+        // Add 2% house edge to coinflip wins to counter martingale strategies
+        winAmount = Math.floor(gameState.betAmount * 1.96); // Down from 2.00x
+        profit = winAmount - gameState.betAmount;
         await updateUserBalance(userId, currentBalance + winAmount);
         await updateCasinoBankBalance(-profit);
     } else {
