@@ -259,7 +259,7 @@ client.on(Events.InteractionCreate, async interaction => {
             }
 
             // Check if gambling commands are used in proper gambling channel
-            const gamblingCommands = ['mines', 'towers', 'crash', 'slots'];
+            const gamblingCommands = ['mines', 'towers', 'crash', 'slots', 'blackjack', 'coinflip', 'chickenrun'];
             if (gamblingCommands.includes(interaction.commandName)) {
                 if (!ensureInGamblingRoom(interaction, interaction.commandName)) {
                     return; // Early return if not in gambling room

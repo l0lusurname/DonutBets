@@ -148,6 +148,71 @@ function generateSlotResults(seed) {
     return results;
 }
 
+// Generate coinflip result
+function generateCoinflipResult(seed) {
+    const random = getRandomFromSeed(seed, 0, 1, 0);
+    return random === 0 ? 'heads' : 'tails';
+}
+
+// Generate blackjack cards (shuffled deck)
+function generateBlackjackCards(seed) {
+    const suits = ['♠', '♥', '♦', '♣'];
+    const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    
+    // Create a full deck
+    const deck = [];
+    for (const suit of suits) {
+        for (const rank of ranks) {
+            deck.push(rank + suit);
+        }
+    }
+    
+    // Fisher-Yates shuffle using provably fair random
+    const shuffledDeck = [...deck];
+    for (let i = shuffledDeck.length - 1; i > 0; i--) {
+        const randomIndex = getRandomFromSeed(seed, 0, i, i + 200); // Offset to avoid collision with other games
+        
+        // Swap elements
+        const temp = shuffledDeck[i];
+        shuffledDeck[i] = shuffledDeck[randomIndex];
+        shuffledDeck[randomIndex] = temp;
+    }
+    
+    return shuffledDeck;
+}
+
+// Generate chicken run multiplier (reduced 0x crash frequency)
+async function generateChickenRunMultiplier(seed, houseEdge = null) {
+    const random = getRandomFromSeed(seed, 1, 10000, 1) / 10000; // Different offset from crash
+
+    // Get configurable house edge if not provided
+    if (houseEdge === null) {
+        const { getCasinoSettings } = require('./database');
+        const settings = await getCasinoSettings();
+        houseEdge = settings.house_edge;
+    }
+
+    // Improved distribution for Chicken Run: only 5% instant crash (0x), more favorable distribution
+    if (random < 0.05) {
+        // 5% chance of instant crash (0x) - much less than crash game's 15%
+        return 0;
+    } else if (random < 0.65) {
+        // 60% chance between 1.5x - 3x (good range for chicken theme)
+        const normalizedRandom = (random - 0.05) / 0.6;
+        return Math.floor((1.5 + normalizedRandom * 1.5) * 100) / 100;
+    } else if (random < 0.90) {
+        // 25% chance between 3x - 6x (lucky range)
+        const normalizedRandom = (random - 0.65) / 0.25;
+        return Math.floor((3 + normalizedRandom * 3) * 100) / 100;
+    } else {
+        // 10% chance between 6x - 10x (very lucky, capped at 10x for balance)
+        const normalizedRandom = (random - 0.90) / 0.10;
+        const exponentialValue = Math.pow(normalizedRandom, 1.5); // Makes higher values rarer
+        const crashPoint = Math.floor((6 + exponentialValue * 4) * 100) / 100;
+        return Math.min(10, crashPoint);
+    }
+}
+
 // Generate crash multiplier
 async function generateCrashMultiplier(seed, houseEdge = null) {
     const random = getRandomFromSeed(seed, 1, 10000, 0) / 10000;
@@ -276,6 +341,9 @@ module.exports = {
     generateTowersResults,
     generateTowerMines,
     generateSlotResults,
+    generateCoinflipResult,
+    generateBlackjackCards,
+    generateChickenRunMultiplier,
     generateCrashMultiplier,
     calculateMinesMultiplier,
     calculateTowerMultiplier
