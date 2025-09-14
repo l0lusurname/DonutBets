@@ -215,8 +215,17 @@ function ensureInGamblingRoom(interaction, gameName) {
     }
 
     const channelName = interaction.channel.name;
-    const username = interaction.user.username.toLowerCase();
-    const expectedChannelName = `gambling-${username}`;
+    
+    // Sanitize username for channel name (same logic as creation)
+    const sanitizedUsername = interaction.user.username
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]/g, '') // Only allow letters, numbers, hyphens, underscores
+        .replace(/^[-_]+|[-_]+$/g, '') // Remove leading/trailing hyphens/underscores
+        .slice(0, 50); // Limit length
+
+    // Fallback if username becomes empty after sanitization
+    const channelUsername = sanitizedUsername || `user${interaction.user.id.slice(-4)}`;
+    const expectedChannelName = `gambling-${channelUsername}`;
 
     if (channelName !== expectedChannelName) {
         const embed = new EmbedBuilder()
@@ -295,9 +304,19 @@ client.on(Events.InteractionCreate, async interaction => {
             if (game === 'gambling' && action === 'create' && params[0] === 'room') {
                 const { PermissionFlagsBits } = require('discord.js');
 
+                // Sanitize username for channel name (remove invalid characters)
+                const sanitizedUsername = interaction.user.username
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-_]/g, '') // Only allow letters, numbers, hyphens, underscores
+                    .replace(/^[-_]+|[-_]+$/g, '') // Remove leading/trailing hyphens/underscores
+                    .slice(0, 50); // Limit length
+
+                // Fallback if username becomes empty after sanitization
+                const channelUsername = sanitizedUsername || `user${interaction.user.id.slice(-4)}`;
+
                 // Check if user already has a gambling channel
                 const existingChannel = interaction.guild.channels.cache.find(
-                    channel => channel.name === `gambling-${interaction.user.username.toLowerCase()}` && channel.type === 0
+                    channel => channel.name === `gambling-${channelUsername}` && channel.type === 0
                 );
 
                 if (existingChannel) {
@@ -317,7 +336,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
                 // Create private gambling channel for user
                 const gamblingChannel = await interaction.guild.channels.create({
-                    name: `gambling-${interaction.user.username.toLowerCase()}`,
+                    name: `gambling-${channelUsername}`,
                     type: 0, // Text channel
                     parent: category.id,
                     permissionOverwrites: [
