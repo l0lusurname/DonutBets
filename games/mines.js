@@ -479,7 +479,7 @@ async function updateGameBoard(interaction, gameState) {
 
     await interaction.editReply({ embeds: [embed], components: rows });
     
-    // Send cashout button as separate message
+    // Send cashout button as separate message (only once)
     if (!gameState.cashoutMessageSent) {
         const cashoutRow = new ActionRowBuilder()
             .addComponents(
@@ -490,13 +490,19 @@ async function updateGameBoard(interaction, gameState) {
             );
         
         try {
-            await interaction.followUp({ 
-                content: `💰 **Current Win: ${formatCurrency(potentialWin)}** (${multiplier.toFixed(2)}x multiplier)`, 
-                components: [cashoutRow] 
-            });
+            setTimeout(async () => {
+                try {
+                    await interaction.followUp({ 
+                        content: `💰 **Current Win: ${formatCurrency(potentialWin)}** (${multiplier.toFixed(2)}x multiplier)`, 
+                        components: [cashoutRow] 
+                    });
+                } catch (followUpError) {
+                    console.error('Error sending cashout follow-up:', followUpError);
+                }
+            }, 500);
             gameState.cashoutMessageSent = true;
         } catch (error) {
-            console.error('Error sending cashout message:', error);
+            console.error('Error setting up cashout message:', error);
         }
     }
 }
@@ -637,17 +643,24 @@ async function cashOut(interaction) {
         gameState.seed.hash
     );
 
-    // Add new game button
-    const newGameRow = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('mines_newgame')
-                .setLabel('🎮 New Game')
-                .setStyle(ButtonStyle.Primary)
-        );
-    rows.push(newGameRow);
-
+    // Don't add new game button to avoid exceeding 5 row limit - send as separate message instead
     await interaction.editReply({ embeds: [embed], components: rows });
+    
+    // Send new game button as separate message
+    setTimeout(async () => {
+        try {
+            const newGameRow = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('mines_newgame')
+                        .setLabel('🎮 New Game')
+                        .setStyle(ButtonStyle.Primary)
+                );
+            await interaction.followUp({ content: 'Great job! Ready for another round?', components: [newGameRow] });
+        } catch (error) {
+            console.error('Error sending new game follow-up:', error);
+        }
+    }, 1000);
 }
 
 async function closeGame(interaction) {

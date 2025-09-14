@@ -181,8 +181,8 @@ function generateBlackjackCards(seed) {
     return shuffledDeck;
 }
 
-// Generate chicken run multiplier (reduced 0x crash frequency)
-async function generateChickenRunMultiplier(seed, houseEdge = null) {
+// Generate chicken run multiplier with custom crash frequency based on difficulty
+async function generateChickenRunMultiplier(seed, crashFrequency = 0.05, houseEdge = null) {
     const random = getRandomFromSeed(seed, 1, 10000, 1) / 10000; // Different offset from crash
 
     // Get configurable house edge if not provided
@@ -192,24 +192,24 @@ async function generateChickenRunMultiplier(seed, houseEdge = null) {
         houseEdge = settings.house_edge;
     }
 
-    // Improved distribution for Chicken Run: only 5% instant crash (0x), more favorable distribution
-    if (random < 0.05) {
-        // 5% chance of instant crash (0x) - much less than crash game's 15%
+    // Use custom crash frequency based on difficulty
+    if (random < crashFrequency) {
+        // Instant crash (0x) - frequency depends on difficulty
         return 0;
-    } else if (random < 0.65) {
+    } else if (random < crashFrequency + 0.60) {
         // 60% chance between 1.5x - 3x (good range for chicken theme)
-        const normalizedRandom = (random - 0.05) / 0.6;
+        const normalizedRandom = (random - crashFrequency) / 0.60;
         return Math.floor((1.5 + normalizedRandom * 1.5) * 100) / 100;
-    } else if (random < 0.90) {
+    } else if (random < crashFrequency + 0.85) {
         // 25% chance between 3x - 6x (lucky range)
-        const normalizedRandom = (random - 0.65) / 0.25;
+        const normalizedRandom = (random - crashFrequency - 0.60) / 0.25;
         return Math.floor((3 + normalizedRandom * 3) * 100) / 100;
     } else {
-        // 10% chance between 6x - 10x (very lucky, capped at 10x for balance)
-        const normalizedRandom = (random - 0.90) / 0.10;
+        // 15% chance between 6x - 15x (very lucky, higher cap for hard difficulty)
+        const normalizedRandom = (random - crashFrequency - 0.85) / (1 - crashFrequency - 0.85);
         const exponentialValue = Math.pow(normalizedRandom, 1.5); // Makes higher values rarer
-        const crashPoint = Math.floor((6 + exponentialValue * 4) * 100) / 100;
-        return Math.min(10, crashPoint);
+        const crashPoint = Math.floor((6 + exponentialValue * 9) * 100) / 100;
+        return Math.min(15, crashPoint); // Cap at 15x for balance
     }
 }
 

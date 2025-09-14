@@ -65,6 +65,9 @@ async function handleButton(interaction, params) {
             case 'start':
                 await startGame(interaction);
                 break;
+            case 'difficulty':
+                await handleDifficultySelection(interaction, data[0]);
+                break;
             case 'bet':
                 if (data[0] === 'custom') {
                     await handleCustomBet(interaction);
@@ -124,12 +127,92 @@ async function startGame(interaction) {
 
     const embed = new EmbedBuilder()
         .setTitle('🐓 Chicken Run 💨')
-        .setDescription('Move forward to increase your multiplier! Each step is riskier, but the payout grows.\n\n🎯 **The farther you go, the higher the multiplier climbs!**')
+        .setDescription('Choose your difficulty and move forward to increase your multiplier! Each step is riskier, but the payout grows.\n\n🎯 **Select difficulty first!**')
         .setColor('#FFA500')
         .addFields(
             { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
-            { name: '🎲 Strategy', value: 'Risk vs Reward!', inline: true },
-            { name: '📈 Max Multiplier', value: 'Up to 10x!', inline: true }
+            { name: '🎮 Choose Difficulty', value: 'Different risk levels!', inline: true },
+            { name: '📈 Max Multiplier', value: 'Up to 15x!', inline: true }
+        );
+
+    const difficultyRow = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder().setCustomId('chickenrun_difficulty_easy').setLabel('🟢 Easy').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('chickenrun_difficulty_medium').setLabel('🟡 Medium').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('chickenrun_difficulty_hard').setLabel('🔴 Hard').setStyle(ButtonStyle.Danger)
+        );
+
+    if (interaction.replied || interaction.deferred) {
+        await interaction.editReply({ embeds: [embed], components: [difficultyRow] });
+    } else {
+        await interaction.reply({ embeds: [embed], components: [difficultyRow] });
+    }
+}
+
+async function handleDifficultySelection(interaction, difficulty) {
+    const userId = interaction.user.id;
+    const balance = await getUserBalance(userId);
+
+    let difficultyData;
+    
+    switch (difficulty) {
+        case 'easy':
+            difficultyData = {
+                name: '🟢 Easy',
+                description: 'Lower risk, steady growth',
+                crashChance: 0.03, // 3% instant crash
+                multiplierBase: 0.20, // Higher base multiplier increase
+                multiplierGrowth: 0.06, // Faster growth per step
+                maxMultiplier: 12,
+                color: '#00FF00'
+            };
+            break;
+        case 'medium':
+            difficultyData = {
+                name: '🟡 Medium',
+                description: 'Balanced risk and reward',
+                crashChance: 0.05, // 5% instant crash (original)
+                multiplierBase: 0.15, // Original base
+                multiplierGrowth: 0.05, // Original growth
+                maxMultiplier: 10,
+                color: '#FFA500'
+            };
+            break;
+        case 'hard':
+            difficultyData = {
+                name: '🔴 Hard',
+                description: 'High risk, high reward',
+                crashChance: 0.08, // 8% instant crash
+                multiplierBase: 0.10, // Lower base multiplier increase
+                multiplierGrowth: 0.08, // Higher growth per step (bigger jumps later)
+                maxMultiplier: 15,
+                color: '#FF0000'
+            };
+            break;
+        default:
+            difficultyData = {
+                name: '🟡 Medium',
+                description: 'Balanced risk and reward',
+                crashChance: 0.05,
+                multiplierBase: 0.15,
+                multiplierGrowth: 0.05,
+                maxMultiplier: 10,
+                color: '#FFA500'
+            };
+    }
+
+    // Store difficulty in temporary state
+    const tempGameState = { userId, difficulty, difficultyData };
+    activeGames.set(userId + '_temp', tempGameState);
+
+    const embed = new EmbedBuilder()
+        .setTitle(`🐓 Chicken Run - ${difficultyData.name}`)
+        .setDescription(`**${difficultyData.description}**\n\nNow choose your bet amount to start the run!`)
+        .setColor(difficultyData.color)
+        .addFields(
+            { name: '💰 Your Balance', value: formatCurrency(balance), inline: true },
+            { name: '💀 Crash Risk', value: `${(difficultyData.crashChance * 100).toFixed(1)}%`, inline: true },
+            { name: '📈 Max Multiplier', value: `${difficultyData.maxMultiplier}x`, inline: true }
         );
 
     const betRow = new ActionRowBuilder()
@@ -143,14 +226,11 @@ async function startGame(interaction) {
 
     const customRow = new ActionRowBuilder()
         .addComponents(
-            new ButtonBuilder().setCustomId('chickenrun_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success)
+            new ButtonBuilder().setCustomId('chickenrun_bet_custom').setLabel('💰 Custom Bet').setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId('chickenrun_start').setLabel('⬅️ Back').setStyle(ButtonStyle.Secondary)
         );
 
-    if (interaction.replied || interaction.deferred) {
-        await interaction.editReply({ embeds: [embed], components: [betRow, customRow] });
-    } else {
-        await interaction.reply({ embeds: [embed], components: [betRow, customRow] });
-    }
+    await interaction.editReply({ embeds: [embed], components: [betRow, customRow] });
 }
 
 async function handleCustomBet(interaction) {
@@ -237,9 +317,16 @@ async function handleBetSelection(interaction, betAmount) {
         return;
     }
 
-    // Generate the crash point
+    // Get difficulty from temp state
+    const tempGameState = activeGames.get(userId + '_temp');
+    if (!tempGameState) {
+        await interaction.editReply({ content: 'Please select difficulty first!', components: [] });
+        return;
+    }
+
+    // Generate the crash point based on difficulty
     const seed = generateSeed();
-    const crashMultiplier = await generateChickenRunMultiplier(seed);
+    const crashMultiplier = await generateChickenRunMultiplier(seed, tempGameState.difficultyData.crashChance);
 
     const gameState = {
         userId,
@@ -248,9 +335,13 @@ async function handleBetSelection(interaction, betAmount) {
         currentMultiplier: 1.00,
         steps: 0,
         seed,
+        difficulty: tempGameState.difficulty,
+        difficultyData: tempGameState.difficultyData,
         gameActive: true
     };
 
+    // Clean up temp state and set active game
+    activeGames.delete(userId + '_temp');
     activeGames.set(userId, gameState);
     await updateUserBalance(userId, balance - betAmount);
 
@@ -277,9 +368,9 @@ async function updateGameDisplay(interaction, gameState) {
     }
 
     const embed = new EmbedBuilder()
-        .setTitle('🐓 Chicken Run 💨')
+        .setTitle(`🐓 Chicken Run - ${gameState.difficultyData.name}`)
         .setDescription(`**Step ${gameState.steps}/10** • **${multiplierDisplay}x** multiplier\n\n${pathDisplay}\n\nKeep moving forward or cash out now!`)
-        .setColor('#FFA500')
+        .setColor(gameState.difficultyData.color)
         .addFields(
             { name: '💰 Bet Amount', value: formatCurrency(gameState.betAmount), inline: true },
             { name: '📈 Current Multiplier', value: `${multiplierDisplay}x`, inline: true },
@@ -308,8 +399,8 @@ async function moveForward(interaction) {
 
     gameState.steps++;
     
-    // Progressive multiplier increase - gets riskier as you go further
-    const multiplierIncrease = 0.15 + (gameState.steps * 0.05); // Starts at 0.15, increases by 0.05 per step
+    // Progressive multiplier increase based on difficulty
+    const multiplierIncrease = gameState.difficultyData.multiplierBase + (gameState.steps * gameState.difficultyData.multiplierGrowth);
     gameState.currentMultiplier += multiplierIncrease;
 
     // Check if player hit the crash point
@@ -318,9 +409,9 @@ async function moveForward(interaction) {
         return;
     }
 
-    // Max 10 steps
+    // Max steps based on difficulty  
     if (gameState.steps >= 10) {
-        gameState.currentMultiplier = 10.00; // Cap at 10x
+        gameState.currentMultiplier = gameState.difficultyData.maxMultiplier; // Cap at difficulty max
         await cashOut(interaction, true); // Auto cashout at max
         return;
     }
