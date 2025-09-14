@@ -148,7 +148,8 @@ class MinecraftBot {
             // This looks like a system message - proceed with payment detection
 
             // Parse payment messages (e.g., "PlayerName paid you $500.50" or "PlayerName paid you $1K")
-            const paymentRegex = /^(\w+) paid you \$?([\d,]+\.?\d*[KMB]?)/i;
+            // Updated to handle player names with special characters like dots, dashes, etc.
+            const paymentRegex = /^([^\s]+) paid you \$?([\d,]+\.?\d*[KMB]?)/i;
             const match = text.match(paymentRegex);
 
             if (match) {
