@@ -1,0 +1,217 @@
+incredible-nurturing
+
+
+production
+Architecture
+Observability
+Logs
+Settings
+
+27 days or $4.73 left
+
+
+Share
+
+(@deployment:9fca6acc-ede0-4c2a-8a79-010af4d8277f) AND @level:"info"
+(@deployment:9fca6acc-ede0-4c2a-8a79-010af4d8277f) AND @level:"info"
+
+
+9/13/25, 10:59 PM
+
+
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_mines_1
+Parsed button: { game: 'mines', action: 'mines', params: [ '1' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: mines_bet_10000
+Parsed button: { game: 'mines', action: 'bet', params: [ '10000' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: mines_mines_3
+Parsed button: { game: 'mines', action: 'mines', params: [ '3' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_bet_10000
+Parsed button: { game: 'mines', action: 'bet', params: [ '10000' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: mines_cashout
+Parsed button: { game: 'mines', action: 'cashout', params: [] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_14
+Parsed button: { game: 'mines', action: 'tile', params: [ '14' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_11
+Parsed button: { game: 'mines', action: 'tile', params: [ '11' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_9
+Parsed button: { game: 'mines', action: 'tile', params: [ '9' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_5
+Parsed button: { game: 'mines', action: 'tile', params: [ '5' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_1
+Parsed button: { game: 'mines', action: 'tile', params: [ '1' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_8
+Parsed button: { game: 'mines', action: 'tile', params: [ '8' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_3
+Parsed button: { game: 'mines', action: 'tile', params: [ '3' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_0
+Parsed button: { game: 'mines', action: 'tile', params: [ '0' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_12
+Parsed button: { game: 'mines', action: 'tile', params: [ '12' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_13
+Parsed button: { game: 'mines', action: 'tile', params: [ '13' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_15
+Parsed button: { game: 'mines', action: 'tile', params: [ '15' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_10
+Parsed button: { game: 'mines', action: 'tile', params: [ '10' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_4
+Parsed button: { game: 'mines', action: 'tile', params: [ '4' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_2
+Parsed button: { game: 'mines', action: 'tile', params: [ '2' ] }
+Raw interaction received: 2 slots
+=== INTERACTION RECEIVED ===
+Type: 2
+User: valerix_x2
+Command: slots
+Command used: slots by valerix_x2 (1401240265439576084)
+Ensuring user exists: 1401240265439576084
+Executing command: slots
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_tile_7
+Parsed button: { game: 'mines', action: 'tile', params: [ '7' ] }
+Command slots completed successfully
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: slots_bet_10000
+Parsed button: { game: 'slots', action: 'bet', params: [ '10000' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: bartyfiddleswithnuts
+Command: Not a command
+Button clicked: mines_cashout
+Parsed button: { game: 'mines', action: 'cashout', params: [] }
+Raw interaction received: 2 slots
+=== INTERACTION RECEIVED ===
+Type: 2
+User: valerix_x2
+Command: slots
+Command used: slots by valerix_x2 (1401240265439576084)
+Ensuring user exists: 1401240265439576084
+Executing command: slots
+Command slots completed successfully
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: slots_bet_10000
+Parsed button: { game: 'slots', action: 'bet', params: [ '10000' ] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: slots_newgame
+Parsed button: { game: 'slots', action: 'newgame', params: [] }
+Raw interaction received: 3 no name
+=== INTERACTION RECEIVED ===
+Type: 3
+User: valerix_x2
+Command: Not a command
+Button clicked: slots_bet_10000
+Parsed button: { game: 'slots', action: 'bet', params: [ '10000' ] }
+
+
+Log Explorer | Railway
