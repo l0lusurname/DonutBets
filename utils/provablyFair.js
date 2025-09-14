@@ -200,24 +200,24 @@ async function generateChickenRunMultiplier(seed, crashFrequency = 0.05, houseEd
         // Renormalize remaining probability after instant crashes
         const u = (random - crashFrequency) / (1 - crashFrequency);
         
-        if (u < 0.30) {
-            // 30% chance between 1.1x - 2x (challenging range)
-            const normalizedRandom = u / 0.30;
-            return Math.floor((1.1 + normalizedRandom * 0.9) * 100) / 100;
-        } else if (u < 0.50) {
-            // 20% chance between 2x - 4x (moderate range)
-            const normalizedRandom = (u - 0.30) / 0.20;
-            return Math.floor((2.0 + normalizedRandom * 2.0) * 100) / 100;
-        } else if (u < 0.75) {
-            // 25% chance between 4x - 8x (good range)
-            const normalizedRandom = (u - 0.50) / 0.25;
-            return Math.floor((4.0 + normalizedRandom * 4.0) * 100) / 100;
+        if (u < 0.70) {
+            // 70% chance between 1.1x - 1.8x (much harder, limited to below 2x)
+            const normalizedRandom = u / 0.70;
+            return Math.floor((1.1 + normalizedRandom * 0.7) * 100) / 100;
+        } else if (u < 0.85) {
+            // 15% chance between 1.8x - 2.5x (rare 2x+ range)
+            const normalizedRandom = (u - 0.70) / 0.15;
+            return Math.floor((1.8 + normalizedRandom * 0.7) * 100) / 100;
+        } else if (u < 0.95) {
+            // 10% chance between 2.5x - 5x (very rare moderate range)
+            const normalizedRandom = (u - 0.85) / 0.10;
+            return Math.floor((2.5 + normalizedRandom * 2.5) * 100) / 100;
         } else {
-            // 25% chance between 8x - 15x (very lucky range)
-            const normalizedRandom = (u - 0.75) / 0.25;
-            const exponentialValue = Math.pow(normalizedRandom, 1.8); // Makes higher values rarer
-            const crashPoint = Math.floor((8.0 + exponentialValue * 7.0) * 100) / 100;
-            return Math.min(15, crashPoint); // Cap at 15x for balance
+            // 5% chance between 5x - 10x (extremely rare high range)
+            const normalizedRandom = (u - 0.95) / 0.05;
+            const exponentialValue = Math.pow(normalizedRandom, 2.5); // Makes higher values much rarer
+            const crashPoint = Math.floor((5.0 + exponentialValue * 5.0) * 100) / 100;
+            return Math.min(10, crashPoint); // Cap at 10x for balance
         }
     }
 }

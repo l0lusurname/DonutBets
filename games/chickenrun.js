@@ -159,33 +159,33 @@ async function handleDifficultySelection(interaction, difficulty) {
         case 'easy':
             difficultyData = {
                 name: '🟢 Easy',
-                description: 'Lower risk, steady growth',
-                crashChance: 0.01, // 1% instant crash
-                multiplierBase: 0.20, // Higher base multiplier increase
-                multiplierGrowth: 0.06, // Faster growth per step
-                maxMultiplier: 12,
+                description: 'Still challenging, limited rewards',
+                crashChance: 0.08, // 8% instant crash
+                multiplierBase: 0.12, // Lower base multiplier increase
+                multiplierGrowth: 0.04, // Slower growth per step
+                maxMultiplier: 8,
                 color: '#00FF00'
             };
             break;
         case 'medium':
             difficultyData = {
                 name: '🟡 Medium',
-                description: 'Balanced risk and reward',
-                crashChance: 0.02, // 2% instant crash
-                multiplierBase: 0.15, // Original base
-                multiplierGrowth: 0.05, // Original growth
-                maxMultiplier: 10,
+                description: 'High risk, moderate reward',
+                crashChance: 0.12, // 12% instant crash
+                multiplierBase: 0.10, // Lower base
+                multiplierGrowth: 0.035, // Slower growth
+                maxMultiplier: 6,
                 color: '#FFA500'
             };
             break;
         case 'hard':
             difficultyData = {
                 name: '🔴 Hard',
-                description: 'High risk, high reward',
-                crashChance: 0.03, // 3% instant crash
-                multiplierBase: 0.10, // Lower base multiplier increase
-                multiplierGrowth: 0.08, // Higher growth per step (bigger jumps later)
-                maxMultiplier: 15,
+                description: 'Extreme risk, rare rewards',
+                crashChance: 0.18, // 18% instant crash
+                multiplierBase: 0.08, // Much lower base multiplier increase
+                multiplierGrowth: 0.03, // Very slow growth per step
+                maxMultiplier: 5,
                 color: '#FF0000'
             };
             break;
