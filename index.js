@@ -284,7 +284,7 @@ client.on(Events.InteractionCreate, async interaction => {
             await ensureUserExists(interaction.user.id, interaction.user.username);
 
             // Check if gambling button interactions are used in proper gambling channel
-            const gamblingGames = ['mines', 'towers', 'crash', 'slots'];
+            const gamblingGames = ['mines', 'towers', 'crash', 'slots', 'blackjack', 'coinflip', 'chickenrun'];
             if (gamblingGames.includes(game)) {
                 if (!ensureInGamblingRoom(interaction, game)) {
                     return; // Early return if not in gambling room
@@ -388,6 +388,18 @@ client.on(Events.InteractionCreate, async interaction => {
                 case 'crash':
                     const crashHandler = require('./games/crash');
                     await crashHandler.handleButton(interaction, [action, ...params]);
+                    break;
+                case 'blackjack':
+                    const blackjackHandler = require('./games/blackjack');
+                    await blackjackHandler.handleButton(interaction, [action, ...params]);
+                    break;
+                case 'coinflip':
+                    const coinflipHandler = require('./games/coinflip');
+                    await coinflipHandler.handleButton(interaction, [action, ...params]);
+                    break;
+                case 'chickenrun':
+                    const chickenrunHandler = require('./games/chickenrun');
+                    await chickenrunHandler.handleButton(interaction, [action, ...params]);
                     break;
                 case 'withdraw':
                     const withdrawHandler = require('./utils/withdraw');

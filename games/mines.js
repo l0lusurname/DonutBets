@@ -460,8 +460,8 @@ async function updateGameBoard(interaction, gameState) {
 
     const rows = [];
 
-    // Create 4 rows of 5 tiles each (20 tiles)
-    for (let i = 0; i < 4; i++) {
+    // Create full 5x5 grid (25 tiles)
+    for (let i = 0; i < 5; i++) {
         const row = new ActionRowBuilder();
         for (let j = 0; j < 5; j++) {
             const tileNumber = i * 5 + j;
@@ -477,28 +477,28 @@ async function updateGameBoard(interaction, gameState) {
         rows.push(row);
     }
 
-    // Add 5th row with 4 tiles and cashout button (5 tiles: 20-24)
-    const finalRow = new ActionRowBuilder();
-    for (let j = 0; j < 4; j++) {
-        const tileNumber = 20 + j;
-        const isRevealed = gameState.revealedTiles.has(tileNumber);
-        finalRow.addComponents(
-            new ButtonBuilder()
-                .setCustomId(`mines_tile_${tileNumber}`)
-                .setLabel(isRevealed ? '💎' : '?')
-                .setStyle(isRevealed ? ButtonStyle.Success : ButtonStyle.Secondary)
-                .setDisabled(isRevealed)
-        );
-    }
-    finalRow.addComponents(
-        new ButtonBuilder()
-            .setCustomId('mines_cashout')
-            .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
-            .setStyle(ButtonStyle.Success)
-    );
-    rows.push(finalRow);
-
     await interaction.editReply({ embeds: [embed], components: rows });
+    
+    // Send cashout button as separate message
+    if (!gameState.cashoutMessageSent) {
+        const cashoutRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('mines_cashout')
+                    .setLabel(`💰 Cash Out - ${formatCurrency(potentialWin)}`)
+                    .setStyle(ButtonStyle.Success)
+            );
+        
+        try {
+            await interaction.followUp({ 
+                content: `💰 **Current Win: ${formatCurrency(potentialWin)}** (${multiplier.toFixed(2)}x multiplier)`, 
+                components: [cashoutRow] 
+            });
+            gameState.cashoutMessageSent = true;
+        } catch (error) {
+            console.error('Error sending cashout message:', error);
+        }
+    }
 }
 
 async function gameOver(interaction, gameState, hitMine) {
